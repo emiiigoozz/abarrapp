@@ -1,0 +1,63 @@
+.home-content {
+  --background: #05060c;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.welcome-card {
+  width: 100%;
+  max-width: 360px;
+  margin: 0 auto;
+  padding: 36px 28px;
+  text-align: center;
+  border-radius: 24px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-surface-border);
+  backdrop-filter: blur(20px);
+
+  .brand-mark {
+    width: 52px;
+    height: 52px;
+    margin: 0 auto 18px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--app-glow-cyan), var(--app-glow-purple));
+    box-shadow: 0 0 28px rgba(0, 229, 255, 0.4);
+
+    ion-icon {
+      font-size: 24px;
+      color: #05060c;
+    }
+  }
+
+  h1 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    margin: 0 0 6px;
+  }
+
+  p {
+    color: var(--app-muted);
+    font-size: 13.5px;
+    margin: 0 0 26px;
+  }
+}
+
+.nav-btn {
+  --background: linear-gradient(135deg, var(--app-glow-cyan), var(--app-glow-purple));
+  --color: #05060c;
+  font-weight: 600;
+  font-size: 14px;
+  height: 46px;
+  text-transform: none;
+  margin-bottom: 10px;
+
+  &[fill="outline"] {
+    --border-color: rgba(255, 255, 255, 0.14);
+    --color: #eef1ff;
+    --background: transparent;
+  }
+}

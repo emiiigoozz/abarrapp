@@ -1,0 +1,83 @@
+<ion-content [fullscreen]="true" class="login-content" [scrollY]="false">
+
+  <div class="glow glow-cyan"></div>
+  <div class="glow glow-purple"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="login-wrap">
+
+    <div class="brand">
+      <div class="brand-mark">
+        <ion-icon name="flash-outline"></ion-icon>
+      </div>
+      <span class="brand-name">NEXUS</span>
+    </div>
+
+    <div class="login-card">
+      <h1 class="title">Bienvenido de nuevo</h1>
+      <p class="subtitle">Ingresá tus credenciales para continuar</p>
+
+      <form (ngSubmit)="login()" class="login-form">
+
+        <div class="input-group" [class.filled]="email">
+          <ion-icon name="mail-outline"></ion-icon>
+          <ion-input
+            type="email"
+            placeholder="Correo electrónico"
+            [(ngModel)]="email"
+            name="email"
+            autocomplete="email"
+            required>
+          </ion-input>
+        </div>
+
+        <div class="input-group" [class.filled]="password">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          <ion-input
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="Contraseña"
+            [(ngModel)]="password"
+            name="password"
+            autocomplete="current-password"
+            required>
+          </ion-input>
+          <ion-icon
+            class="toggle-icon"
+            [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+            (click)="togglePassword()">
+          </ion-icon>
+        </div>
+
+        <a class="forgot-link">¿Olvidaste tu contraseña?</a>
+
+        <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+        <ion-button expand="block" shape="round" class="login-btn" type="submit" [disabled]="loading">
+          <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+          <ng-container *ngIf="!loading">
+            Iniciar sesión
+            <ion-icon name="arrow-forward-outline" slot="end"></ion-icon>
+          </ng-container>
+        </ion-button>
+
+      </form>
+
+      <div class="divider"><span>o continuá con</span></div>
+
+      <div class="social-row">
+        <button class="social-btn">
+          <ion-icon name="logo-google"></ion-icon>
+        </button>
+        <button class="social-btn">
+          <ion-icon name="logo-apple"></ion-icon>
+        </button>
+      </div>
+
+      <p class="footer-text">
+        ¿No tenés cuenta? <a class="signup-link" routerLink="/register">Registrate</a>
+      </p>
+    </div>
+
+  </div>
+
+</ion-content>

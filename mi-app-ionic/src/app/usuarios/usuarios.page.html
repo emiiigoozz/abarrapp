@@ -1,0 +1,122 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Gestión de usuarios</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="admin-content">
+
+  <nav class="admin-nav">
+    <a routerLink="/productos"><ion-icon name="cube-outline"></ion-icon> Productos</a>
+    <a routerLink="/movimientos"><ion-icon name="swap-vertical-outline"></ion-icon> Movimientos</a>
+    <a routerLink="/dashboard"><ion-icon name="stats-chart-outline"></ion-icon> Dashboard</a>
+    <a routerLink="/usuarios" class="active"><ion-icon name="people-outline"></ion-icon> Usuarios</a>
+  </nav>
+
+  <div class="form-card">
+    <h2 class="form-title">{{ modoEdicion ? 'Editar usuario' : 'Nuevo usuario' }}</h2>
+
+    <div class="form-grid">
+      <div class="input-group">
+        <ion-icon name="person-outline"></ion-icon>
+        <ion-input type="text" placeholder="Nombre completo" [(ngModel)]="nombre"></ion-input>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="at-outline"></ion-icon>
+        <ion-input type="text" placeholder="Usuario" [(ngModel)]="usuario"></ion-input>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="mail-outline"></ion-icon>
+        <ion-input type="email" placeholder="Correo electrónico" [(ngModel)]="email"></ion-input>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="lock-closed-outline"></ion-icon>
+        <ion-input
+          type="password"
+          [placeholder]="modoEdicion ? 'Nueva contraseña (opcional)' : 'Contraseña'"
+          [(ngModel)]="password">
+        </ion-input>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="ribbon-outline"></ion-icon>
+        <select class="native-select" [(ngModel)]="rol">
+          <option value="admin">Admin</option>
+          <option value="editor">Editor</option>
+          <option value="usuario">Usuario</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="toggle-outline"></ion-icon>
+        <select class="native-select" [(ngModel)]="estado">
+          <option [ngValue]="1">Activo</option>
+          <option [ngValue]="0">Inactivo</option>
+        </select>
+      </div>
+    </div>
+
+    <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+    <div class="form-actions">
+      <ion-button class="save-btn" shape="round" [disabled]="guardando" (click)="guardar()">
+        <ion-spinner *ngIf="guardando" name="crescent"></ion-spinner>
+        <span *ngIf="!guardando">{{ modoEdicion ? 'Actualizar' : 'Registrar' }}</span>
+      </ion-button>
+      <ion-button *ngIf="modoEdicion" fill="clear" class="cancel-btn" (click)="cancelarEdicion()">
+        Cancelar
+      </ion-button>
+    </div>
+  </div>
+
+  <div class="list-section">
+    <div class="list-header">
+      <h2>Usuarios registrados</h2>
+      <ion-button fill="clear" size="small" (click)="cargarUsuarios()">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </div>
+
+    <div class="empty-state" *ngIf="!cargando && usuarios.length === 0">
+      Todavía no hay usuarios registrados.
+    </div>
+
+    <div class="user-card" *ngFor="let u of usuarios">
+      <div class="user-info">
+        <div class="user-avatar">{{ u.nombre.charAt(0) }}</div>
+        <div class="user-text">
+          <span class="user-name">{{ u.nombre }}</span>
+          <span class="user-sub">{{ u.usuario ? '@' + u.usuario : 'sin usuario' }} · {{ u.email }}</span>
+        </div>
+      </div>
+
+      <div class="user-meta">
+        <span class="badge rol">{{ u.rol }}</span>
+        <span class="badge" [class.activo]="u.estado === 1" [class.inactivo]="u.estado === 0">
+          {{ u.estado === 1 ? 'Activo' : 'Inactivo' }}
+        </span>
+      </div>
+
+      <div class="user-actions">
+        <ion-button fill="clear" size="small" (click)="editar(u)">
+          <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" size="small" color="danger" (click)="eliminar(u)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

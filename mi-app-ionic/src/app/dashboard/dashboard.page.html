@@ -1,0 +1,87 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Dashboard</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="admin-content">
+
+  <nav class="admin-nav">
+    <a routerLink="/productos"><ion-icon name="cube-outline"></ion-icon> Productos</a>
+    <a routerLink="/movimientos"><ion-icon name="swap-vertical-outline"></ion-icon> Movimientos</a>
+    <a routerLink="/dashboard" class="active"><ion-icon name="stats-chart-outline"></ion-icon> Dashboard</a>
+    <a routerLink="/usuarios"><ion-icon name="people-outline"></ion-icon> Usuarios</a>
+  </nav>
+
+  <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">Ingresos</div>
+      <div class="stat-value">${{ resumen.ingresos.toFixed(2) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Costos</div>
+      <div class="stat-value">${{ resumen.costos.toFixed(2) }}</div>
+    </div>
+    <div class="stat-card" [class.positivo]="resumen.ganancia >= 0" [class.negativo]="resumen.ganancia < 0">
+      <div class="stat-label">Ganancia</div>
+      <div class="stat-value">${{ resumen.ganancia.toFixed(2) }}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-label">Unidades vendidas</div>
+      <div class="stat-value">{{ resumen.unidades }}</div>
+    </div>
+  </div>
+
+  <div class="form-card">
+    <h2 class="form-title">Curva de ganancias (últimos 14 días)</h2>
+    <div class="chart-wrap">
+      <canvas #chartCanvas></canvas>
+    </div>
+  </div>
+
+  <div class="list-section" *ngIf="stockBajo.length > 0 || productosConPerdida.length > 0">
+    <div class="list-header"><h2>Alertas</h2></div>
+
+    <div class="alert-card" *ngFor="let s of stockBajo">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <span>Stock bajo: <strong>{{ s.nombre }}</strong> — quedan {{ s.stock }} unidades</span>
+    </div>
+
+    <div class="alert-card" *ngFor="let p of productosConPerdida">
+      <ion-icon name="trending-down-outline"></ion-icon>
+      <span><strong>{{ p.nombre }}</strong> se vende sin ganancia (costo ${{ p.costo.toFixed(2) }} ≥ precio ${{ p.precio_venta.toFixed(2) }})</span>
+    </div>
+  </div>
+
+  <div class="list-section">
+    <div class="list-header"><h2>Más vendidos</h2></div>
+
+    <div class="empty-state" *ngIf="!cargando && topProductos.length === 0">
+      Todavía no hay ventas registradas.
+    </div>
+
+    <div class="item-card" *ngFor="let p of topProductos">
+      <div class="item-info">
+        <div class="item-avatar">{{ p.nombre.charAt(0) }}</div>
+        <div class="item-text">
+          <span class="item-name">{{ p.nombre }}</span>
+          <span class="item-sub">{{ p.unidades_vendidas }} unidades vendidas</span>
+        </div>
+      </div>
+      <div class="item-meta">
+        <span class="badge activo">+${{ p.ganancia.toFixed(2) }}</span>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

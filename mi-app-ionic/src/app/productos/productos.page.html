@@ -1,0 +1,115 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Productos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="admin-content">
+
+  <nav class="admin-nav">
+    <a routerLink="/productos" class="active"><ion-icon name="cube-outline"></ion-icon> Productos</a>
+    <a routerLink="/movimientos"><ion-icon name="swap-vertical-outline"></ion-icon> Movimientos</a>
+    <a routerLink="/dashboard"><ion-icon name="stats-chart-outline"></ion-icon> Dashboard</a>
+    <a routerLink="/usuarios"><ion-icon name="people-outline"></ion-icon> Usuarios</a>
+  </nav>
+
+  <div class="form-card">
+    <h2 class="form-title">{{ modoEdicion ? 'Editar producto' : 'Nuevo producto' }}</h2>
+
+    <div class="form-grid">
+      <div class="input-group">
+        <ion-icon name="pricetag-outline"></ion-icon>
+        <ion-input type="text" placeholder="Nombre del producto" [(ngModel)]="nombre"></ion-input>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="barcode-outline"></ion-icon>
+        <ion-input type="text" placeholder="Código de barras (opcional)" [(ngModel)]="codigo"></ion-input>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="apps-outline"></ion-icon>
+        <ion-input type="text" placeholder="Categoría (opcional)" [(ngModel)]="categoria"></ion-input>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="cash-outline"></ion-icon>
+        <ion-input type="number" placeholder="Costo" [(ngModel)]="costo"></ion-input>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="pricetags-outline"></ion-icon>
+        <ion-input type="number" placeholder="Precio de venta" [(ngModel)]="precio_venta"></ion-input>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="cube-outline"></ion-icon>
+        <ion-input type="number" placeholder="Stock inicial" [(ngModel)]="stock"></ion-input>
+      </div>
+    </div>
+
+    <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+    <div class="form-actions">
+      <ion-button class="save-btn" shape="round" [disabled]="guardando" (click)="guardar()">
+        <ion-spinner *ngIf="guardando" name="crescent"></ion-spinner>
+        <span *ngIf="!guardando">{{ modoEdicion ? 'Actualizar' : 'Registrar' }}</span>
+      </ion-button>
+      <ion-button *ngIf="modoEdicion" fill="clear" class="cancel-btn" (click)="cancelarEdicion()">
+        Cancelar
+      </ion-button>
+    </div>
+  </div>
+
+  <div class="list-section">
+    <div class="list-header">
+      <h2>Productos ({{ productos.length }})</h2>
+      <ion-button fill="clear" size="small" (click)="cargarProductos()">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </div>
+
+    <div class="empty-state" *ngIf="!cargando && productos.length === 0">
+      Todavía no hay productos registrados.
+    </div>
+
+    <div class="item-card" *ngFor="let p of productos">
+      <div class="item-info">
+        <div class="item-avatar">{{ p.nombre.charAt(0) }}</div>
+        <div class="item-text">
+          <span class="item-name">{{ p.nombre }}</span>
+          <span class="item-sub">
+            {{ p.categoria || 'Sin categoría' }} · costo ${{ p.costo.toFixed(2) }} · venta ${{ p.precio_venta.toFixed(2) }}
+          </span>
+        </div>
+      </div>
+
+      <div class="item-meta">
+        <span class="badge" [class.activo]="margen(p) > 0" [class.alerta]="margen(p) <= 0">
+          {{ margen(p) > 0 ? '+$' + margen(p).toFixed(2) : 'sin margen' }}
+        </span>
+        <span class="badge" [class.alerta]="p.stock <= 5">
+          Stock: {{ p.stock }}
+        </span>
+      </div>
+
+      <div class="item-actions">
+        <ion-button fill="clear" size="small" (click)="editar(p)">
+          <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+        </ion-button>
+        <ion-button fill="clear" size="small" color="danger" (click)="eliminar(p)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

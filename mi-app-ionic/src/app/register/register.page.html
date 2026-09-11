@@ -1,0 +1,94 @@
+<ion-content [fullscreen]="true" class="login-content" [scrollY]="false">
+
+  <div class="glow glow-cyan"></div>
+  <div class="glow glow-purple"></div>
+  <div class="grid-overlay"></div>
+
+  <div class="login-wrap">
+
+    <div class="brand">
+      <div class="brand-mark">
+        <ion-icon name="flash-outline"></ion-icon>
+      </div>
+      <span class="brand-name">NEXUS</span>
+    </div>
+
+    <div class="login-card">
+      <h1 class="title">Creá tu cuenta</h1>
+      <p class="subtitle">Completá tus datos para empezar</p>
+
+      <form (ngSubmit)="register()" class="login-form">
+
+        <div class="input-group" [class.filled]="nombre">
+          <ion-icon name="person-outline"></ion-icon>
+          <ion-input
+            type="text"
+            placeholder="Nombre completo"
+            [(ngModel)]="nombre"
+            name="nombre"
+            autocomplete="name"
+            required>
+          </ion-input>
+        </div>
+
+        <div class="input-group" [class.filled]="email">
+          <ion-icon name="mail-outline"></ion-icon>
+          <ion-input
+            type="email"
+            placeholder="Correo electrónico"
+            [(ngModel)]="email"
+            name="email"
+            autocomplete="email"
+            required>
+          </ion-input>
+        </div>
+
+        <div class="input-group" [class.filled]="password">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          <ion-input
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="Contraseña"
+            [(ngModel)]="password"
+            name="password"
+            autocomplete="new-password"
+            required>
+          </ion-input>
+          <ion-icon
+            class="toggle-icon"
+            [name]="showPassword ? 'eye-off-outline' : 'eye-outline'"
+            (click)="togglePassword()">
+          </ion-icon>
+        </div>
+
+        <div class="input-group" [class.filled]="confirmPassword">
+          <ion-icon name="lock-closed-outline"></ion-icon>
+          <ion-input
+            [type]="showPassword ? 'text' : 'password'"
+            placeholder="Confirmar contraseña"
+            [(ngModel)]="confirmPassword"
+            name="confirmPassword"
+            autocomplete="new-password"
+            required>
+          </ion-input>
+        </div>
+
+        <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+        <ion-button expand="block" shape="round" class="login-btn" type="submit" [disabled]="loading">
+          <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+          <ng-container *ngIf="!loading">
+            Crear cuenta
+            <ion-icon name="arrow-forward-outline" slot="end"></ion-icon>
+          </ng-container>
+        </ion-button>
+
+      </form>
+
+      <p class="footer-text">
+        ¿Ya tenés cuenta? <a class="signup-link" routerLink="/login">Iniciá sesión</a>
+      </p>
+    </div>
+
+  </div>
+
+</ion-content>

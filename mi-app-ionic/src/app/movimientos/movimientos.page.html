@@ -1,0 +1,91 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Movimientos</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="admin-content">
+
+  <nav class="admin-nav">
+    <a routerLink="/productos"><ion-icon name="cube-outline"></ion-icon> Productos</a>
+    <a routerLink="/movimientos" class="active"><ion-icon name="swap-vertical-outline"></ion-icon> Movimientos</a>
+    <a routerLink="/dashboard"><ion-icon name="stats-chart-outline"></ion-icon> Dashboard</a>
+    <a routerLink="/usuarios"><ion-icon name="people-outline"></ion-icon> Usuarios</a>
+  </nav>
+
+  <div class="form-card">
+    <h2 class="form-title">Registrar movimiento</h2>
+
+    <div class="form-grid">
+      <div class="input-group">
+        <ion-icon name="cube-outline"></ion-icon>
+        <select class="native-select" [(ngModel)]="producto_id">
+          <option [ngValue]="null" disabled>Elegí un producto</option>
+          <option *ngFor="let p of productos" [ngValue]="p.id">{{ p.nombre }} (stock: {{ p.stock }})</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="swap-vertical-outline"></ion-icon>
+        <select class="native-select" [(ngModel)]="tipo">
+          <option value="salida">Venta (salida)</option>
+          <option value="entrada">Entrada / reabastecimiento</option>
+        </select>
+      </div>
+
+      <div class="input-group">
+        <ion-icon name="calculator-outline"></ion-icon>
+        <ion-input type="number" placeholder="Cantidad" [(ngModel)]="cantidad"></ion-input>
+      </div>
+    </div>
+
+    <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+    <p class="ok-msg" *ngIf="okMsg">{{ okMsg }}</p>
+
+    <div class="form-actions">
+      <ion-button class="save-btn" shape="round" [disabled]="guardando" (click)="registrar()">
+        <ion-spinner *ngIf="guardando" name="crescent"></ion-spinner>
+        <span *ngIf="!guardando">{{ tipo === 'salida' ? 'Registrar venta' : 'Registrar entrada' }}</span>
+      </ion-button>
+    </div>
+  </div>
+
+  <div class="list-section">
+    <div class="list-header">
+      <h2>Movimientos recientes</h2>
+      <ion-button fill="clear" size="small" (click)="cargarTodo()">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </div>
+
+    <div class="empty-state" *ngIf="!cargando && movimientos.length === 0">
+      Todavía no hay movimientos registrados.
+    </div>
+
+    <div class="item-card" *ngFor="let m of movimientos">
+      <div class="item-info">
+        <div class="item-avatar">{{ m.producto_nombre.charAt(0) }}</div>
+        <div class="item-text">
+          <span class="item-name">{{ m.producto_nombre }}</span>
+          <span class="item-sub">{{ m.fecha }} · {{ m.cantidad }} unidades</span>
+        </div>
+      </div>
+
+      <div class="item-meta">
+        <span class="badge" [class.entrada]="m.tipo === 'entrada'" [class.salida]="m.tipo === 'salida'">
+          {{ m.tipo === 'entrada' ? 'Entrada' : 'Venta' }}
+        </span>
+        <span class="badge activo" *ngIf="m.tipo === 'salida'">+${{ ganancia(m).toFixed(2) }}</span>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

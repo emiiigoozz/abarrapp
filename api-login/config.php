@@ -18,3 +18,18 @@ try {
     echo json_encode(['success' => false, 'message' => 'Error de conexión a la base de datos']);
     exit;
 }
+
+/**
+ * Devuelve la tienda sobre la que se trabaja (de la URL o del cuerpo JSON).
+ * Si no viene, responde 400 y termina: el inventario siempre pertenece a una tienda.
+ */
+function requerirTiendaId(?array $body = null): int
+{
+    $tiendaId = (int) ($_GET['tienda_id'] ?? ($body['tienda_id'] ?? 0));
+    if ($tiendaId <= 0) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'message' => 'Falta indicar la tienda']);
+        exit;
+    }
+    return $tiendaId;
+}

@@ -15,6 +15,7 @@ require __DIR__ . '/config.php';
 $method = $_SERVER['REQUEST_METHOD'];
 
 if ($method === 'GET') {
+    $tiendaId = requerirTiendaId();
     $limit = (int) ($_GET['limit'] ?? 30);
     $limit = $limit > 0 && $limit <= 200 ? $limit : 30;
 
@@ -23,16 +24,18 @@ if ($method === 'GET') {
                 m.costo_unitario, m.precio_unitario, m.fecha
          FROM movimientos m
          JOIN productos p ON p.id = m.producto_id
+         WHERE p.tienda_id = ?
          ORDER BY m.fecha DESC, m.id DESC
          LIMIT ' . $limit
     );
-    $stmt->execute();
+    $stmt->execute([$tiendaId]);
     echo json_encode(['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
     exit;
 }
 
 if ($method === 'POST') {
     $body = json_decode(file_get_contents('php://input'), true);
+    $tiendaId = requerirTiendaId($body);
 
     $producto_id = (int) ($body['producto_id'] ?? 0);
     $tipo = $body['tipo'] ?? '';
@@ -47,14 +50,14 @@ if ($method === 'POST') {
     $pdo->beginTransaction();
 
     try {
-        $stmt = $pdo->prepare('SELECT costo, precio_venta, stock FROM productos WHERE id = ? FOR UPDATE');
-        $stmt->execute([$producto_id]);
+        $stmt = $pdo->prepare('SELECT costo, precio_venta, stock FROM productos WHERE id = ? AND tienda_id = ? FOR UPDATE');
+        $stmt->execute([$producto_id, $tiendaId]);
         $producto = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if (!$producto) {
             $pdo->rollBack();
             http_response_code(404);
-            echo json_encode(['success' => false, 'message' => 'El producto no existe']);
+            echo json_encode(['success' => false, 'message' => 'El producto no existe en esta tienda']);
             exit;
         }
 

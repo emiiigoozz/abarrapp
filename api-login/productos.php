@@ -14,14 +14,29 @@ require __DIR__ . '/config.php';
 
 $method = $_SERVER['REQUEST_METHOD'];
 
+/** Responde 404 si el producto no existe o es de otra tienda. */
+function exigirProductoDeTienda(PDO $pdo, int $id, int $tiendaId): void
+{
+    $stmt = $pdo->prepare('SELECT 1 FROM productos WHERE id = ? AND tienda_id = ?');
+    $stmt->execute([$id, $tiendaId]);
+    if (!$stmt->fetchColumn()) {
+        http_response_code(404);
+        echo json_encode(['success' => false, 'message' => 'El producto no existe en esta tienda']);
+        exit;
+    }
+}
+
 if ($method === 'GET') {
-    $stmt = $pdo->query('SELECT * FROM productos ORDER BY nombre ASC');
+    $tiendaId = requerirTiendaId();
+    $stmt = $pdo->prepare('SELECT * FROM productos WHERE tienda_id = ? ORDER BY nombre ASC');
+    $stmt->execute([$tiendaId]);
     echo json_encode(['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
     exit;
 }
 
 if ($method === 'POST') {
     $body = json_decode(file_get_contents('php://input'), true);
+    $tiendaId = requerirTiendaId($body);
 
     $nombre = trim($body['nombre'] ?? '');
     $codigo = trim($body['codigo'] ?? '') ?: null;
@@ -36,8 +51,8 @@ if ($method === 'POST') {
         exit;
     }
 
-    $insert = $pdo->prepare('INSERT INTO productos (nombre, codigo, categoria, costo, precio_venta, stock) VALUES (?, ?, ?, ?, ?, ?)');
-    $insert->execute([$nombre, $codigo, $categoria, $costo, $precio_venta, $stock]);
+    $insert = $pdo->prepare('INSERT INTO productos (tienda_id, nombre, codigo, categoria, costo, precio_venta, stock) VALUES (?, ?, ?, ?, ?, ?, ?)');
+    $insert->execute([$tiendaId, $nombre, $codigo, $categoria, $costo, $precio_venta, $stock]);
 
     http_response_code(201);
     echo json_encode(['success' => true, 'message' => 'Producto creado', 'id' => (int) $pdo->lastInsertId()]);
@@ -53,6 +68,8 @@ if ($method === 'PUT') {
     }
 
     $body = json_decode(file_get_contents('php://input'), true);
+    $tiendaId = requerirTiendaId($body);
+    exigirProductoDeTienda($pdo, $id, $tiendaId);
 
     $nombre = trim($body['nombre'] ?? '');
     $codigo = trim($body['codigo'] ?? '') ?: null;
@@ -82,8 +99,11 @@ if ($method === 'DELETE') {
         exit;
     }
 
-    $delete = $pdo->prepare('DELETE FROM productos WHERE id = ?');
-    $delete->execute([$id]);
+    $tiendaId = requerirTiendaId();
+    exigirProductoDeTienda($pdo, $id, $tiendaId);
+
+    $delete = $pdo->prepare('DELETE FROM productos WHERE id = ? AND tienda_id = ?');
+    $delete->execute([$id, $tiendaId]);
 
     echo json_encode(['success' => true, 'message' => 'Producto eliminado']);
     exit;

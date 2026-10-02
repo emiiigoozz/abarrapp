@@ -21,8 +21,110 @@
     <a routerLink="/usuarios"><ion-icon name="people-outline"></ion-icon> Usuarios</a>
   </nav>
 
-  <div class="form-card">
-    <h2 class="form-title">Registrar movimiento</h2>
+  <div class="modo-toggle">
+    <button [class.active]="modo === 'vender'" (click)="modo = 'vender'">
+      <ion-icon name="cart-outline"></ion-icon> Vender
+    </button>
+    <button [class.active]="modo === 'recibir'" (click)="modo = 'recibir'">
+      <ion-icon name="archive-outline"></ion-icon> Recibir mercancía
+    </button>
+  </div>
+
+  <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+  <p class="ok-msg" *ngIf="okMsg">{{ okMsg }}</p>
+
+  <!-- ============ MODO VENDER: PUNTO DE VENTA ============ -->
+  <div class="pos-layout" *ngIf="modo === 'vender'">
+
+    <aside class="carrito-panel">
+      <div class="carrito-header">
+        <h2>Carrito</h2>
+        <span class="carrito-count">{{ unidadesCarrito }} u.</span>
+      </div>
+
+      <div class="carrito-vacio" *ngIf="carrito.length === 0">
+        Agregá productos desde la lista de la derecha, o escaneá uno.
+      </div>
+
+      <div class="carrito-lista">
+        <div class="carrito-item" *ngFor="let item of carrito">
+          <div class="carrito-item-info">
+            <span class="carrito-item-nombre">{{ item.nombre }}</span>
+            <span class="carrito-item-precio">${{ item.precio_unitario.toFixed(2) }} c/u</span>
+          </div>
+
+          <div class="carrito-item-qty">
+            <button (click)="cambiarCantidad(item, -1)">−</button>
+            <span>{{ item.cantidad }}</span>
+            <button (click)="cambiarCantidad(item, 1)">+</button>
+          </div>
+
+          <span class="carrito-item-subtotal">${{ (item.precio_unitario * item.cantidad).toFixed(2) }}</span>
+
+          <ion-button fill="clear" size="small" color="danger" class="carrito-item-quitar" (click)="quitarDelCarrito(item)">
+            <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+          </ion-button>
+        </div>
+      </div>
+
+      <div class="carrito-footer">
+        <div class="carrito-total">
+          <span>Total</span>
+          <strong>${{ totalCarrito.toFixed(2) }}</strong>
+        </div>
+
+        <ion-button expand="block" shape="round" class="finalizar-btn" [disabled]="procesandoVenta || carrito.length === 0" (click)="terminarVenta()">
+          <ion-spinner *ngIf="procesandoVenta" name="crescent"></ion-spinner>
+          <span *ngIf="!procesandoVenta">Terminar venta</span>
+        </ion-button>
+        <ion-button expand="block" shape="round" fill="outline" class="cancelar-btn" [disabled]="carrito.length === 0" (click)="cancelarVenta()">
+          Cancelar
+        </ion-button>
+      </div>
+    </aside>
+
+    <section class="productos-panel">
+      <div class="productos-toolbar">
+        <div class="input-group busqueda-group">
+          <ion-icon name="search-outline"></ion-icon>
+          <ion-input placeholder="Buscar por nombre o código" [(ngModel)]="busqueda"></ion-input>
+        </div>
+        <ion-button fill="outline" class="scan-cta-small" (click)="mostrarScanner = true">
+          <ion-icon slot="icon-only" name="camera-outline"></ion-icon>
+        </ion-button>
+        <ion-button class="add-product-btn" (click)="abrirAltaRapida()">
+          <ion-icon slot="start" name="add-outline"></ion-icon>
+          Registrar producto
+        </ion-button>
+      </div>
+
+      <div class="empty-state" *ngIf="!cargando && productosFiltrados.length === 0">
+        No hay productos que coincidan.
+      </div>
+
+      <div class="producto-row"
+           *ngFor="let p of productosFiltrados; let i = index"
+           [class.par]="i % 2 === 0"
+           [class.sin-stock]="p.stock <= 0"
+           (click)="p.stock > 0 && agregarAlCarrito(p)">
+        <span class="producto-row-nombre">{{ p.nombre }}</span>
+        <span class="producto-row-precio">${{ p.precio_venta.toFixed(2) }}</span>
+        <span class="producto-row-stock" [class.bajo]="p.stock <= 5">Stock: {{ p.stock }}</span>
+      </div>
+    </section>
+  </div>
+
+  <!-- ============ MODO RECIBIR: ENTRADA SIMPLE ============ -->
+  <div class="form-card" *ngIf="modo === 'recibir'">
+    <h2 class="form-title">Registrar entrada de mercancía</h2>
+
+    <ion-button expand="block" fill="outline" class="scan-cta" (click)="mostrarScanner = true">
+      <ion-icon slot="start" name="camera-outline"></ion-icon>
+      Escanear con cámara
+    </ion-button>
+    <p class="scan-hid-hint">
+      Si tenés una pistola lectora conectada, podés escanear directamente en esta pantalla sin tocar nada.
+    </p>
 
     <div class="form-grid">
       <div class="input-group">
@@ -34,30 +136,20 @@
       </div>
 
       <div class="input-group">
-        <ion-icon name="swap-vertical-outline"></ion-icon>
-        <select class="native-select" [(ngModel)]="tipo">
-          <option value="salida">Venta (salida)</option>
-          <option value="entrada">Entrada / reabastecimiento</option>
-        </select>
-      </div>
-
-      <div class="input-group">
         <ion-icon name="calculator-outline"></ion-icon>
-        <ion-input type="number" placeholder="Cantidad" [(ngModel)]="cantidad"></ion-input>
+        <ion-input type="number" placeholder="Cantidad recibida" [(ngModel)]="cantidad"></ion-input>
       </div>
     </div>
 
-    <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
-    <p class="ok-msg" *ngIf="okMsg">{{ okMsg }}</p>
-
     <div class="form-actions">
-      <ion-button class="save-btn" shape="round" [disabled]="guardando" (click)="registrar()">
-        <ion-spinner *ngIf="guardando" name="crescent"></ion-spinner>
-        <span *ngIf="!guardando">{{ tipo === 'salida' ? 'Registrar venta' : 'Registrar entrada' }}</span>
+      <ion-button class="save-btn" shape="round" [disabled]="guardandoEntrada" (click)="registrarEntrada()">
+        <ion-spinner *ngIf="guardandoEntrada" name="crescent"></ion-spinner>
+        <span *ngIf="!guardandoEntrada">Registrar entrada</span>
       </ion-button>
     </div>
   </div>
 
+  <!-- ============ MOVIMIENTOS RECIENTES ============ -->
   <div class="list-section">
     <div class="list-header">
       <h2>Movimientos recientes</h2>
@@ -84,6 +176,50 @@
           {{ m.tipo === 'entrada' ? 'Entrada' : 'Venta' }}
         </span>
         <span class="badge activo" *ngIf="m.tipo === 'salida'">+${{ ganancia(m).toFixed(2) }}</span>
+      </div>
+    </div>
+  </div>
+
+  <app-barcode-scanner
+    *ngIf="mostrarScanner"
+    (scanned)="onCodigoEscaneado($event)"
+    (closed)="mostrarScanner = false">
+  </app-barcode-scanner>
+
+  <!-- ============ MODAL: ALTA RÁPIDA DE PRODUCTO ============ -->
+  <div class="alta-rapida-overlay" *ngIf="mostrarAltaRapida">
+    <div class="alta-rapida-card">
+      <h2 class="form-title">Registrar producto rápido</h2>
+
+      <div class="form-grid">
+        <div class="input-group">
+          <ion-icon name="pricetag-outline"></ion-icon>
+          <ion-input type="text" placeholder="Nombre del producto" [(ngModel)]="nuevoNombre"></ion-input>
+        </div>
+        <div class="input-group">
+          <ion-icon name="barcode-outline"></ion-icon>
+          <ion-input type="text" placeholder="Código de barras (opcional)" [(ngModel)]="nuevoCodigo"></ion-input>
+        </div>
+        <div class="input-group">
+          <ion-icon name="cash-outline"></ion-icon>
+          <ion-input type="number" placeholder="Costo" [(ngModel)]="nuevoCosto"></ion-input>
+        </div>
+        <div class="input-group">
+          <ion-icon name="pricetags-outline"></ion-icon>
+          <ion-input type="number" placeholder="Precio de venta" [(ngModel)]="nuevoPrecio"></ion-input>
+        </div>
+        <div class="input-group">
+          <ion-icon name="cube-outline"></ion-icon>
+          <ion-input type="number" placeholder="Stock inicial" [(ngModel)]="nuevoStock"></ion-input>
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <ion-button class="save-btn" shape="round" [disabled]="guardandoProducto" (click)="guardarProductoRapido()">
+          <ion-spinner *ngIf="guardandoProducto" name="crescent"></ion-spinner>
+          <span *ngIf="!guardandoProducto">Guardar y agregar</span>
+        </ion-button>
+        <ion-button fill="clear" class="cancel-btn" (click)="cerrarAltaRapida()">Cancelar</ion-button>
       </div>
     </div>
   </div>

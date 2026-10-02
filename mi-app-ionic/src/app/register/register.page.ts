@@ -2,6 +2,8 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import axios from 'axios';
 import { environment } from '../../environments/environment';
+import { StorageService } from '../shared/storage.service';
+import { mensajeError } from '../shared/network.service';
 
 @Component({
   selector: 'app-register',
@@ -19,7 +21,10 @@ export class RegisterPage {
   loading = false;
   errorMsg = '';
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private storage: StorageService,
+  ) { }
 
   togglePassword() {
     this.showPassword = !this.showPassword;
@@ -53,15 +58,15 @@ export class RegisterPage {
       }, { timeout: 10000 });
 
       if (data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        this.router.navigateByUrl('/home');
+        this.storage.set('token', data.token);
+        this.storage.set('user', JSON.stringify(data.user));
+        this.router.navigateByUrl('/tiendas');
       } else {
         this.errorMsg = data.message || 'No se pudo crear la cuenta';
       }
     } catch (err: any) {
       console.error('Register error:', err);
-      this.errorMsg = err?.response?.data?.message || 'Error al conectar con el servidor';
+      this.errorMsg = mensajeError(err, 'Error al conectar con el servidor');
     } finally {
       this.loading = false;
     }

@@ -3,16 +3,9 @@ import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
 import axios from 'axios';
 import { environment } from '../../environments/environment';
-
-interface Usuario {
-  id: number;
-  nombre: string;
-  usuario: string | null;
-  email: string;
-  rol: string;
-  estado: number;
-  creado_en: string;
-}
+import { StorageService } from '../shared/storage.service';
+import { mensajeError } from '../shared/network.service';
+import { Usuario } from '../models';
 
 @Component({
   selector: 'app-usuarios',
@@ -39,12 +32,13 @@ export class UsuariosPage implements OnInit {
 
   constructor(
     private router: Router,
+    private storage: StorageService,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
   ) { }
 
   ngOnInit() {
-    if (!localStorage.getItem('token')) {
+    if (!this.storage.get('token')) {
       this.router.navigateByUrl('/login');
       return;
     }
@@ -68,7 +62,7 @@ export class UsuariosPage implements OnInit {
       }));
     } catch (err) {
       console.error('Error al cargar usuarios:', err);
-      this.errorMsg = 'No se pudo cargar la lista de usuarios';
+      this.errorMsg = mensajeError(err, 'No se pudo cargar la lista de usuarios');
     } finally {
       this.cargando = false;
       this.cdr.detectChanges();
@@ -131,7 +125,7 @@ export class UsuariosPage implements OnInit {
       await this.cargarUsuarios();
     } catch (err: any) {
       console.error('Error al guardar usuario:', err);
-      this.errorMsg = err?.response?.data?.message || 'No se pudo guardar el usuario';
+      this.errorMsg = mensajeError(err, 'No se pudo guardar el usuario');
     } finally {
       this.guardando = false;
       this.cdr.detectChanges();
@@ -163,15 +157,14 @@ export class UsuariosPage implements OnInit {
       await this.cargarUsuarios();
     } catch (err) {
       console.error('Error al eliminar usuario:', err);
-      this.errorMsg = 'No se pudo eliminar el usuario';
+      this.errorMsg = mensajeError(err, 'No se pudo eliminar el usuario');
     } finally {
       this.cdr.detectChanges();
     }
   }
 
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    this.storage.cerrarSesion();
     this.router.navigateByUrl('/login');
   }
 

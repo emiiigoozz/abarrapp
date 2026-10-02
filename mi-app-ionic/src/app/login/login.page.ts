@@ -1,7 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import axios from 'axios';
 import { environment } from '../../environments/environment';
+import { StorageService } from '../shared/storage.service';
+import { mensajeError } from '../shared/network.service';
 
 @Component({
   selector: 'app-login',
@@ -9,7 +11,7 @@ import { environment } from '../../environments/environment';
   styleUrls: ['./login.page.scss'],
   standalone: false,
 })
-export class LoginPage {
+export class LoginPage implements OnInit {
 
   email = '';
   password = '';
@@ -17,7 +19,17 @@ export class LoginPage {
   loading = false;
   errorMsg = '';
 
-  constructor(private router: Router) { }
+  constructor(
+    private router: Router,
+    private storage: StorageService,
+  ) { }
+
+  ngOnInit() {
+    // Si quedó una sesión guardada en el dispositivo, se entra directo sin pedir login.
+    if (this.storage.get('token')) {
+      this.router.navigateByUrl(this.storage.get('tienda_id') ? '/home' : '/tiendas', { replaceUrl: true });
+    }
+  }
 
   togglePassword() {
     this.showPassword = !this.showPassword;
@@ -40,15 +52,15 @@ export class LoginPage {
       }, { timeout: 10000 });
 
       if (data.success) {
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        this.router.navigateByUrl('/home');
+        this.storage.set('token', data.token);
+        this.storage.set('user', JSON.stringify(data.user));
+        this.router.navigateByUrl('/tiendas');
       } else {
         this.errorMsg = data.message || 'No se pudo iniciar sesión';
       }
     } catch (err: any) {
       console.error('Login error:', err);
-      this.errorMsg = err?.response?.data?.message || 'Error al conectar con el servidor';
+      this.errorMsg = mensajeError(err, 'Error al conectar con el servidor');
     } finally {
       this.loading = false;
     }

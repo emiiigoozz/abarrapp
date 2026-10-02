@@ -6,6 +6,7 @@ import { RouterModule } from '@angular/router';
 import { IonicModule } from '@ionic/angular/lazy';
 
 import { ProductosPageRoutingModule } from './productos-routing.module';
+import { BarcodeScannerComponent } from '../shared/barcode-scanner/barcode-scanner.component';
 
 import { ProductosPage } from './productos.page';
 
@@ -15,6 +16,7 @@ import { ProductosPage } from './productos.page';
     FormsModule,
     IonicModule,
     RouterModule,
+    BarcodeScannerComponent,
     ProductosPageRoutingModule
   ],
   declarations: [ProductosPage]

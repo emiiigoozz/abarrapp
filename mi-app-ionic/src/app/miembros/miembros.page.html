@@ -1,0 +1,61 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Miembros — {{ tiendaNombre }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="admin-content">
+
+  <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+
+  <div class="list-section">
+    <div class="list-header">
+      <h2>Miembros ({{ miembros.length }})</h2>
+      <ion-button fill="clear" size="small" (click)="cargarMiembros()">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </div>
+
+    <div class="empty-state" *ngIf="!cargando && miembros.length === 0">
+      Todavía no hay miembros en esta tienda.
+    </div>
+
+    <div class="item-card" *ngFor="let m of miembros">
+      <div class="item-info">
+        <div class="item-avatar">{{ m.nombre.charAt(0) }}</div>
+        <div class="item-text">
+          <span class="item-name">{{ m.nombre }}</span>
+          <span class="item-sub">{{ m.email }}</span>
+        </div>
+      </div>
+
+      <div class="item-meta" *ngIf="m.estado === 'pendiente'">
+        <span class="badge alerta">Pendiente</span>
+        <ion-button size="small" class="approve-btn" (click)="aprobar(m)">Aprobar</ion-button>
+      </div>
+
+      <div class="item-meta" *ngIf="m.estado === 'aceptado'">
+        <select class="native-select rol-select" [ngModel]="m.rol" (ngModelChange)="cambiarRol(m, $event)">
+          <option value="admin">Admin</option>
+          <option value="trabajador">Trabajador</option>
+          <option value="lector">Lector</option>
+        </select>
+      </div>
+
+      <div class="item-actions">
+        <ion-button fill="clear" size="small" color="danger" (click)="eliminar(m)">
+          <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

@@ -1,0 +1,29 @@
+@import '../../theme/admin-panel';
+
+.tiendas-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.join-btn {
+  --border-color: rgba(255, 255, 255, 0.14);
+  --color: #eef1ff;
+  text-transform: none;
+  height: 46px;
+}
+
+.tienda-card {
+  cursor: pointer;
+  transition: border-color 0.2s ease, transform 0.15s ease;
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  &.pendiente {
+    opacity: 0.6;
+    cursor: default;
+  }
+}

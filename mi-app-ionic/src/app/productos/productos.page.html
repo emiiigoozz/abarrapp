@@ -30,9 +30,12 @@
         <ion-input type="text" placeholder="Nombre del producto" [(ngModel)]="nombre"></ion-input>
       </div>
 
-      <div class="input-group">
+      <div class="input-group scan-group">
         <ion-icon name="barcode-outline"></ion-icon>
         <ion-input type="text" placeholder="Código de barras (opcional)" [(ngModel)]="codigo"></ion-input>
+        <ion-button fill="clear" size="small" class="scan-btn" (click)="mostrarScanner = true">
+          <ion-icon slot="icon-only" name="camera-outline"></ion-icon>
+        </ion-button>
       </div>
 
       <div class="input-group">
@@ -111,5 +114,11 @@
       </div>
     </div>
   </div>
+
+  <app-barcode-scanner
+    *ngIf="mostrarScanner"
+    (scanned)="onCodigoEscaneado($event)"
+    (closed)="mostrarScanner = false">
+  </app-barcode-scanner>
 
 </ion-content>

@@ -1,0 +1,19 @@
+/** Producto del inventario (tabla `productos`). */
+export interface Producto {
+  id: number;
+  /** Tienda dueña del producto: cada tienda tiene su propio inventario. */
+  tienda_id: number;
+  nombre: string;
+  /** Código de barras (EAN/UPC); opcional. */
+  codigo: string | null;
+  categoria: string | null;
+  /** Lo que le cuesta el producto a la tienda. */
+  costo: number;
+  /** Precio al que se vende al cliente. */
+  precio_venta: number;
+  stock: number;
+  creado_en: string;
+}
+
+/** Datos del producto que necesita el punto de venta. */
+export type ProductoVenta = Omit<Producto, 'tienda_id' | 'categoria' | 'creado_en'>;

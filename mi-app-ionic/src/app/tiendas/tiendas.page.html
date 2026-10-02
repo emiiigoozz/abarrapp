@@ -1,0 +1,59 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Mis tiendas</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="logout()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="admin-content">
+
+  <div class="tiendas-actions">
+    <ion-button expand="block" shape="round" class="save-btn" [disabled]="procesando" (click)="crearTienda()">
+      <ion-icon slot="start" name="add-circle-outline"></ion-icon>
+      Crear una tienda
+    </ion-button>
+    <ion-button expand="block" shape="round" fill="outline" class="join-btn" [disabled]="procesando" (click)="unirseConCodigo()">
+      <ion-icon slot="start" name="key-outline"></ion-icon>
+      Unirme con un código
+    </ion-button>
+  </div>
+
+  <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+  <p class="ok-msg" *ngIf="okMsg">{{ okMsg }}</p>
+
+  <div class="list-section">
+    <div class="list-header">
+      <h2>Tiendas</h2>
+      <ion-button fill="clear" size="small" (click)="cargarTiendas()">
+        <ion-icon slot="icon-only" name="refresh-outline"></ion-icon>
+      </ion-button>
+    </div>
+
+    <div class="empty-state" *ngIf="!cargando && tiendas.length === 0">
+      Todavía no formás parte de ninguna tienda. Creá una o unite con un código.
+    </div>
+
+    <div class="item-card tienda-card" *ngFor="let t of tiendas" [class.pendiente]="t.estado === 'pendiente'" (click)="entrar(t)">
+      <div class="item-info">
+        <div class="item-avatar">{{ t.nombre.charAt(0) }}</div>
+        <div class="item-text">
+          <span class="item-name">{{ t.nombre }}</span>
+          <span class="item-sub" *ngIf="t.rol === 'admin'">Código: {{ t.codigo_invitacion }}</span>
+          <span class="item-sub" *ngIf="t.rol !== 'admin'">{{ t.estado === 'pendiente' ? 'Esperando aprobación' : 'Miembro' }}</span>
+        </div>
+      </div>
+
+      <div class="item-meta">
+        <span class="badge rol">{{ t.rol }}</span>
+        <span class="badge" [class.activo]="t.estado === 'aceptado'" [class.alerta]="t.estado === 'pendiente'">
+          {{ t.estado === 'aceptado' ? 'Activo' : 'Pendiente' }}
+        </span>
+      </div>
+    </div>
+  </div>
+
+</ion-content>

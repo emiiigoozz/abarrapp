@@ -1,0 +1,22 @@
+<div class="scanner-overlay">
+  <div class="scanner-header">
+    <span>Escanear código de barras</span>
+    <ion-button fill="clear" (click)="cerrar()">
+      <ion-icon slot="icon-only" name="close-outline" color="light"></ion-icon>
+    </ion-button>
+  </div>
+
+  <div class="scanner-body">
+    <video #video class="scanner-video" *ngIf="!errorMsg"></video>
+    <div class="scanner-frame" *ngIf="listo && !errorMsg"></div>
+
+    <div class="scanner-error" *ngIf="errorMsg">
+      <ion-icon name="camera-outline"></ion-icon>
+      <p>{{ errorMsg }}</p>
+    </div>
+  </div>
+
+  <p class="scanner-hint" *ngIf="!errorMsg">
+    Alejá el código de barras unos 20-30 cm de la cámara y mantenelo derecho y bien iluminado
+  </p>
+</div>

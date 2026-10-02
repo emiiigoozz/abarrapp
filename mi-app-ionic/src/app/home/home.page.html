@@ -1,6 +1,11 @@
 <ion-header [translucent]="true">
   <ion-toolbar>
-    <ion-title>Inicio</ion-title>
+    <ion-buttons slot="start">
+      <ion-button (click)="cambiarTienda()">
+        <ion-icon slot="icon-only" name="swap-horizontal-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>{{ tiendaNombre || 'Inicio' }}</ion-title>
     <ion-buttons slot="end">
       <ion-button (click)="logout()">
         <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
@@ -14,24 +19,32 @@
     <div class="brand-mark">
       <ion-icon name="flash-outline"></ion-icon>
     </div>
-    <h1>¡Bienvenido!</h1>
-    <p>Ya iniciaste sesión correctamente.</p>
+    <h1>{{ tiendaNombre }}</h1>
+    <p>Estás como <strong>{{ tiendaRol }}</strong> en esta tienda.</p>
 
     <ion-button expand="block" shape="round" class="nav-btn" routerLink="/dashboard">
       <ion-icon slot="start" name="stats-chart-outline"></ion-icon>
       Dashboard de ganancias
     </ion-button>
-    <ion-button expand="block" shape="round" fill="outline" class="nav-btn" routerLink="/productos">
+
+    <ion-button *ngIf="esTrabajadorOAdmin" expand="block" shape="round" fill="outline" class="nav-btn" routerLink="/movimientos">
+      <ion-icon slot="start" name="swap-vertical-outline"></ion-icon>
+      Punto de venta (movimientos)
+    </ion-button>
+
+    <ion-button *ngIf="esAdmin" expand="block" shape="round" fill="outline" class="nav-btn" routerLink="/productos">
       <ion-icon slot="start" name="cube-outline"></ion-icon>
       Productos
     </ion-button>
-    <ion-button expand="block" shape="round" fill="outline" class="nav-btn" routerLink="/movimientos">
-      <ion-icon slot="start" name="swap-vertical-outline"></ion-icon>
-      Movimientos (ventas / entradas)
-    </ion-button>
-    <ion-button expand="block" shape="round" fill="outline" class="nav-btn" routerLink="/usuarios">
+
+    <ion-button *ngIf="esAdmin" expand="block" shape="round" fill="outline" class="nav-btn" routerLink="/miembros">
       <ion-icon slot="start" name="people-outline"></ion-icon>
-      Gestionar usuarios
+      Miembros de la tienda
+    </ion-button>
+
+    <ion-button *ngIf="esAdmin" expand="block" shape="round" fill="outline" class="nav-btn" routerLink="/usuarios">
+      <ion-icon slot="start" name="settings-outline"></ion-icon>
+      Usuarios del sistema
     </ion-button>
   </div>
 </ion-content>

@@ -1,3 +1,7 @@
 <ion-app>
+  <div class="offline-banner" *ngIf="!online()" role="status">
+    <ion-icon name="cloud-offline-outline"></ion-icon>
+    <span>Sin conexión · se muestran los últimos datos guardados</span>
+  </div>
   <ion-router-outlet></ion-router-outlet>
 </ion-app>

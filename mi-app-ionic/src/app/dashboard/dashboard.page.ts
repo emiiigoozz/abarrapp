@@ -3,38 +3,9 @@ import { Router } from '@angular/router';
 import axios from 'axios';
 import Chart from 'chart.js/auto';
 import { environment } from '../../environments/environment';
-
-interface Resumen {
-  ingresos: number;
-  costos: number;
-  ganancia: number;
-  unidades: number;
-}
-
-interface GananciaDia {
-  dia: string;
-  ganancia: number;
-}
-
-interface TopProducto {
-  id: number;
-  nombre: string;
-  unidades_vendidas: number;
-  ganancia: number;
-}
-
-interface AlertaStock {
-  id: number;
-  nombre: string;
-  stock: number;
-}
-
-interface AlertaPerdida {
-  id: number;
-  nombre: string;
-  costo: number;
-  precio_venta: number;
-}
+import { StorageService } from '../shared/storage.service';
+import { mensajeError } from '../shared/network.service';
+import { AlertaPerdida, AlertaStock, GananciaDia, Resumen, TopProducto } from '../models';
 
 @Component({
   selector: 'app-dashboard',
@@ -45,6 +16,7 @@ interface AlertaPerdida {
 export class DashboardPage implements OnInit, AfterViewInit {
 
   private apiUrl = `${environment.apiUrl}/dashboard.php`;
+  private tiendaId = 0;
   private chart: Chart | null = null;
   private chartDataPendiente: GananciaDia[] | null = null;
 
@@ -60,12 +32,19 @@ export class DashboardPage implements OnInit, AfterViewInit {
 
   constructor(
     private router: Router,
+    private storage: StorageService,
     private cdr: ChangeDetectorRef,
   ) { }
 
   ngOnInit() {
-    if (!localStorage.getItem('token')) {
+    if (!this.storage.get('token')) {
       this.router.navigateByUrl('/login');
+      return;
+    }
+    // El inventario es por tienda: sin tienda activa no hay nada que mostrar.
+    this.tiendaId = Number(this.storage.get('tienda_id'));
+    if (!this.tiendaId) {
+      this.router.navigateByUrl('/tiendas');
       return;
     }
     this.cargarDashboard();
@@ -82,8 +61,11 @@ export class DashboardPage implements OnInit, AfterViewInit {
     this.cargando = true;
     this.errorMsg = '';
     try {
-      const { data } = await axios.get(this.apiUrl, { timeout: 10000 });
-      const d = data.data;
+      const { datos: d, desdeCache } = await this.storage.obtenerConCache('dashboard',
+        () => axios.get(this.apiUrl, { params: { tienda_id: this.tiendaId }, timeout: 10000 }).then(r => r.data.data));
+      if (desdeCache) {
+        this.errorMsg = this.storage.mensajeCache();
+      }
 
       this.resumen = {
         ingresos: Number(d.resumen.ingresos),
@@ -124,7 +106,7 @@ export class DashboardPage implements OnInit, AfterViewInit {
       }
     } catch (err) {
       console.error('Error al cargar dashboard:', err);
-      this.errorMsg = 'No se pudo cargar el dashboard';
+      this.errorMsg = mensajeError(err, 'No se pudo cargar el dashboard');
     } finally {
       this.cargando = false;
       this.cdr.detectChanges();
@@ -203,8 +185,7 @@ export class DashboardPage implements OnInit, AfterViewInit {
   }
 
   logout() {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+    this.storage.cerrarSesion();
     this.router.navigateByUrl('/login');
   }
 

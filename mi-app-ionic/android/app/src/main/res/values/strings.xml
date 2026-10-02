@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">AbarrApp</string>
+    <string name="title_activity_main">AbarrApp</string>
+    <string name="package_name">com.abarrapp.app</string>
+    <string name="custom_url_scheme">com.abarrapp.app</string>
+</resources>

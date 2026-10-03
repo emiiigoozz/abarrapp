@@ -233,7 +233,6 @@ Estas credenciales las crea `database.sql`.
 App II/
 ├── README.md
 ├── BITACORA_IA.md                 ← bitácora de desarrollo asistido por IA
-├── docs/GUION_VIDEO.md            ← guion del video demostrativo
 ├── api-login/                     ← API REST en PHP (se copia a htdocs)
 │   ├── config.php                 ← conexión PDO + requerirTiendaId()
 │   ├── login.php, register.php

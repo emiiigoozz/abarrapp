@@ -156,7 +156,7 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 
 **Qué hizo la IA:**
 - Revisó cómo se comunicaba la app con la API y encontró **23 llamadas a `axios` repartidas en 9 páginas**. Cada página armaba su propia URL, repetía el tiempo límite y convertía a mano los números que PHP devuelve como texto. No existía un servicio Angular para la API.
-- Creó `ApiService` (`shared/api.service.ts`): un método tipado por operación (21 en total), con la URL base y el tiempo límite configurados en un solo lugar, que entrega los datos ya convertidos al modelo.
+- Creó `ApiService` (`shared/api.service.ts`): un método tipado por operación (20 en total), con la URL base y el tiempo límite configurados en un solo lugar, que entrega los datos ya convertidos al modelo.
 - Creó `models/api.model.ts` con la forma del JSON de cada petición y respuesta.
 - Migró las 9 páginas al servicio. Ahora `axios` solo se importa en `api.service.ts`.
 - Cambió el prefijo de la caché offline (`cache_v2_`), porque las copias guardadas por la versión anterior tenían los números como texto.

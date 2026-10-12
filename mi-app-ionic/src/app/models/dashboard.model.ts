@@ -33,3 +33,12 @@ export interface AlertaPerdida {
   costo: number;
   precio_venta: number;
 }
+
+/** Respuesta completa de dashboard.php. */
+export interface Dashboard {
+  resumen: Resumen;
+  ganancias_por_dia: GananciaDia[];
+  top_productos: TopProducto[];
+  stock_bajo: AlertaStock[];
+  productos_con_perdida: AlertaPerdida[];
+}

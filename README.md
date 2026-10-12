@@ -70,7 +70,8 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 │        │                                                                        │
 │  StorageService ── Capacitor Preferences (sesión, caché, carrito)              │
 │  NetworkService ── Capacitor Network (¿hay conexión?) + mensajeError()         │
-│        │  axios (HTTP + JSON)                                                   │
+│  ApiService ────── único acceso a la API: 1 método por endpoint (axios)        │
+│        │  HTTP + JSON                                                           │
 └────────┼────────────────────────────────────────────────────────────────────────┘
          ▼
    API REST en PHP (api-login/*.php) ──► MySQL (base login_app)
@@ -125,7 +126,8 @@ Las interfaces están en [`mi-app-ionic/src/app/models/`](mi-app-ionic/src/app/m
 | `movimiento.model.ts` | `Movimiento`, `TipoMovimiento`, `ItemCarrito` |
 | `tienda.model.ts` | `Tienda`, `Miembro`, `RolTienda`, `EstadoMiembro` |
 | `usuario.model.ts` | `Usuario` |
-| `dashboard.model.ts` | `Resumen`, `GananciaDia`, `TopProducto`, `AlertaStock`, `AlertaPerdida` |
+| `dashboard.model.ts` | `Resumen`, `GananciaDia`, `TopProducto`, `AlertaStock`, `AlertaPerdida`, `Dashboard` |
+| `api.model.ts` | Forma del JSON de peticiones y respuestas: `RespuestaApi<T>`, `RespuestaSesion`, `ProductoForm`, `ItemVenta`, `RespuestaVenta`, `UsuarioForm`, `CambiosMiembro` |
 
 ## Persistencia y modo offline
 
@@ -248,6 +250,7 @@ App II/
     └── src/app/
         ├── models/                ← interfaces del modelo de datos
         ├── shared/
+        │   ├── api.service.ts     ← único acceso a la API REST (1 método por endpoint)
         │   ├── storage.service.ts ← persistencia + caché offline
         │   ├── network.service.ts ← detección de red + mensajeError()
         │   ├── hid-scanner.service.ts

@@ -1,11 +1,10 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import axios from 'axios';
 import { Subscription } from 'rxjs';
-import { environment } from '../../environments/environment';
 import { HidScannerService } from '../shared/hid-scanner.service';
 import { StorageService } from '../shared/storage.service';
+import { ApiService } from '../shared/api.service';
 import { mensajeError } from '../shared/network.service';
 import { ItemCarrito, Movimiento, ProductoVenta } from '../models';
 
@@ -17,9 +16,6 @@ import { ItemCarrito, Movimiento, ProductoVenta } from '../models';
 })
 export class MovimientosPage implements OnInit, OnDestroy {
 
-  private productosUrl = `${environment.apiUrl}/productos.php`;
-  private movimientosUrl = `${environment.apiUrl}/movimientos.php`;
-  private ventaUrl = `${environment.apiUrl}/venta.php`;
   private tiendaId = 0;
 
   modo: 'vender' | 'recibir' = 'vender';
@@ -55,6 +51,7 @@ export class MovimientosPage implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private storage: StorageService,
+    private api: ApiService,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
     private hidScanner: HidScannerService,
@@ -112,32 +109,15 @@ export class MovimientosPage implements OnInit, OnDestroy {
     this.errorMsg = '';
     try {
       const [productosRes, movimientosRes] = await Promise.all([
-        this.storage.obtenerConCache('productos',
-          () => axios.get(this.productosUrl, { params: { tienda_id: this.tiendaId }, timeout: 10000 }).then(r => r.data.data as any[])),
-        this.storage.obtenerConCache('movimientos',
-          () => axios.get(this.movimientosUrl, { params: { tienda_id: this.tiendaId }, timeout: 10000 }).then(r => r.data.data as any[])),
+        this.storage.obtenerConCache('productos', () => this.api.listarProductos(this.tiendaId)),
+        this.storage.obtenerConCache('movimientos', () => this.api.listarMovimientos(this.tiendaId)),
       ]);
       if (productosRes.desdeCache || movimientosRes.desdeCache) {
         this.errorMsg = this.storage.mensajeCache();
       }
 
-      this.productos = productosRes.datos.map(p => ({
-        id: Number(p.id),
-        nombre: p.nombre,
-        codigo: p.codigo,
-        costo: Number(p.costo),
-        precio_venta: Number(p.precio_venta),
-        stock: Number(p.stock),
-      }));
-
-      this.movimientos = movimientosRes.datos.map(m => ({
-        ...m,
-        id: Number(m.id),
-        producto_id: Number(m.producto_id),
-        cantidad: Number(m.cantidad),
-        costo_unitario: Number(m.costo_unitario),
-        precio_unitario: Number(m.precio_unitario),
-      }));
+      this.productos = productosRes.datos;
+      this.movimientos = movimientosRes.datos;
     } catch (err) {
       console.error('Error al cargar movimientos:', err);
       this.errorMsg = mensajeError(err, 'No se pudo cargar la información');
@@ -210,12 +190,10 @@ export class MovimientosPage implements OnInit, OnDestroy {
     this.okMsg = '';
 
     try {
-      const { data } = await axios.post(this.ventaUrl, {
-        tienda_id: this.tiendaId,
-        items: this.carrito.map(i => ({ producto_id: i.producto_id, cantidad: i.cantidad })),
-      }, { timeout: 10000 });
+      const venta = await this.api.registrarVenta(this.tiendaId,
+        this.carrito.map(i => ({ producto_id: i.producto_id, cantidad: i.cantidad })));
 
-      this.okMsg = `Venta registrada: $${Number(data.total).toFixed(2)}`;
+      this.okMsg = `Venta registrada: $${venta.total.toFixed(2)}`;
       this.carrito = [];
       this.guardarCarrito();
       await this.cargarTodo();
@@ -270,12 +248,7 @@ export class MovimientosPage implements OnInit, OnDestroy {
     this.guardandoEntrada = true;
 
     try {
-      await axios.post(this.movimientosUrl, {
-        tienda_id: this.tiendaId,
-        producto_id: this.producto_id,
-        tipo: 'entrada',
-        cantidad: this.cantidad,
-      }, { timeout: 10000 });
+      await this.api.registrarEntrada(this.tiendaId, this.producto_id, this.cantidad);
 
       this.okMsg = 'Entrada registrada';
       this.cantidad = null;
@@ -315,19 +288,18 @@ export class MovimientosPage implements OnInit, OnDestroy {
     this.errorMsg = '';
 
     try {
-      const { data } = await axios.post(this.productosUrl, {
-        tienda_id: this.tiendaId,
+      const nuevoId = await this.api.crearProducto(this.tiendaId, {
         nombre: this.nuevoNombre,
         codigo: this.nuevoCodigo,
         costo: this.nuevoCosto ?? 0,
         precio_venta: this.nuevoPrecio,
         stock: this.nuevoStock,
-      }, { timeout: 10000 });
+      });
 
       this.mostrarAltaRapida = false;
       await this.cargarTodo();
 
-      const nuevo = this.productos.find(p => p.id === Number(data.id));
+      const nuevo = this.productos.find(p => p.id === nuevoId);
       if (nuevo && this.modo === 'vender') {
         this.agregarAlCarrito(nuevo);
       } else if (nuevo) {

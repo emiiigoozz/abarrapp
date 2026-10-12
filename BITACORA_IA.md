@@ -21,6 +21,7 @@ En este documento registro para qué usé la IA en cada etapa del proyecto: qué
 | 7 | 2026-10-01 | Compilar para Android | Plataforma Android, conexión del emulador con la API, APK |
 | 8 | 2026-10-02 | Manejo de conexión y errores | Detección de red, mensajes por tipo de error, prueba offline |
 | 9 | 2026-10-02 | Versión 1.0 | Modelo de datos centralizado, inventario por tienda, README, APK v1.0.0 |
+| 10 | 2026-10-12 | Arquitectura cliente → API → BD | `ApiService` centralizado, modelos JSON, análisis de la arquitectura |
 
 ---
 
@@ -146,6 +147,21 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 - Centralizó el modelo de datos en `src/app/models/` (antes `Producto` estaba definido dos veces y era distinto en cada página).
 - Creó `database.sql` con el esquema completo para instalaciones nuevas y lo probó en una base temporal.
 - Reescribió el README, actualizó esta bitácora, compiló el APK v1.0.0 e hizo los commits.
+
+---
+
+## Sesión 10 — Arquitectura cliente → API → base de datos
+
+**Prompt enviado:** la descripción de la entrega ("Convertir la aplicación de la Unidad I en un cliente móvil conectado a un servicio web": diagrama, endpoints, métodos HTTP, modelo JSON, servicio Angular, arquitectura y evidencia de IA), pidiendo el documento en Word.
+
+**Qué hizo la IA:**
+- Revisó cómo se comunicaba la app con la API y encontró **23 llamadas a `axios` repartidas en 9 páginas**. Cada página armaba su propia URL, repetía el tiempo límite y convertía a mano los números que PHP devuelve como texto. No existía un servicio Angular para la API.
+- Creó `ApiService` (`shared/api.service.ts`): un método tipado por operación (21 en total), con la URL base y el tiempo límite configurados en un solo lugar, que entrega los datos ya convertidos al modelo.
+- Creó `models/api.model.ts` con la forma del JSON de cada petición y respuesta.
+- Migró las 9 páginas al servicio. Ahora `axios` solo se importa en `api.service.ts`.
+- Cambió el prefijo de la caché offline (`cache_v2_`), porque las copias guardadas por la versión anterior tenían los números como texto.
+- Probó el servicio contra la API real con 12 casos: login, CRUD completo de productos, entrada, venta, dashboard, miembros, usuarios y el rechazo de un producto de otra tienda. Los 12 pasaron.
+- Analizó la arquitectura e hizo una lista de mejoras pendientes (ver el documento de la entrega). La más importante: la API no valida el token en cada petición.
 
 ---
 

@@ -6,7 +6,10 @@ import { NetworkService } from './network.service';
 const SESION_KEYS = ['token', 'user', 'tienda_id', 'tienda_nombre', 'tienda_rol'];
 const TIENDA_KEYS = ['tienda_id', 'tienda_nombre', 'tienda_rol'];
 // Prefijo de los datos traídos de la API que se guardan para verlos sin conexión.
-const CACHE_PREFIX = 'cache_';
+// v2: los datos ya vienen normalizados por ApiService (números como number, no texto).
+const CACHE_PREFIX = 'cache_v2_';
+// Cualquier caché, incluida la de versiones anteriores, empieza así; se usa para limpiarla.
+const CACHE_PREFIX_TODAS = 'cache_';
 
 
 /**
@@ -121,7 +124,7 @@ export class StorageService {
 
   private limpiarCache(): void {
     [...this.datos.keys()]
-      .filter(k => k.startsWith(CACHE_PREFIX))
+      .filter(k => k.startsWith(CACHE_PREFIX_TODAS))
       .forEach(k => this.remove(k));
   }
 

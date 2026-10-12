@@ -1,11 +1,10 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import axios from 'axios';
-import { environment } from '../../environments/environment';
 import { StorageService } from '../shared/storage.service';
+import { ApiService } from '../shared/api.service';
 import { mensajeError } from '../shared/network.service';
-import { Miembro } from '../models';
+import { CambiosMiembro, Miembro, RolTienda } from '../models';
 
 @Component({
   selector: 'app-miembros',
@@ -15,7 +14,6 @@ import { Miembro } from '../models';
 })
 export class MiembrosPage implements OnInit {
 
-  private apiUrl = `${environment.apiUrl}/miembros.php`;
   private usuarioId!: number;
   private tiendaId!: number;
 
@@ -27,6 +25,7 @@ export class MiembrosPage implements OnInit {
   constructor(
     private router: Router,
     private storage: StorageService,
+    private api: ApiService,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
   ) { }
@@ -56,15 +55,7 @@ export class MiembrosPage implements OnInit {
     this.cargando = true;
     this.errorMsg = '';
     try {
-      const { data } = await axios.get(this.apiUrl, {
-        params: { tienda_id: this.tiendaId, usuario_id: this.usuarioId },
-        timeout: 10000,
-      });
-      this.miembros = (data.data as any[]).map(m => ({
-        ...m,
-        id: Number(m.id),
-        usuario_id: Number(m.usuario_id),
-      }));
+      this.miembros = await this.api.listarMiembros(this.tiendaId, this.usuarioId);
     } catch (err) {
       console.error('Error al cargar miembros:', err);
       this.errorMsg = mensajeError(err, 'No se pudieron cargar los miembros');
@@ -78,17 +69,14 @@ export class MiembrosPage implements OnInit {
     await this.actualizar(m.id, { estado: 'aceptado' });
   }
 
-  async cambiarRol(m: Miembro, rol: string) {
+  async cambiarRol(m: Miembro, rol: RolTienda) {
     await this.actualizar(m.id, { rol });
   }
 
-  private async actualizar(id: number, cambios: { rol?: string; estado?: string }) {
+  private async actualizar(id: number, cambios: CambiosMiembro) {
     this.errorMsg = '';
     try {
-      await axios.put(`${this.apiUrl}?id=${id}`, {
-        usuario_id: this.usuarioId,
-        ...cambios,
-      }, { timeout: 10000 });
+      await this.api.actualizarMiembro(id, this.usuarioId, cambios);
       await this.cargarMiembros();
     } catch (err: any) {
       console.error('Error al actualizar miembro:', err);
@@ -108,7 +96,7 @@ export class MiembrosPage implements OnInit {
           role: 'destructive',
           handler: async () => {
             try {
-              await axios.delete(`${this.apiUrl}?id=${m.id}&usuario_id=${this.usuarioId}`, { timeout: 10000 });
+              await this.api.eliminarMiembro(m.id, this.usuarioId);
               await this.cargarMiembros();
             } catch (err: any) {
               console.error('Error al eliminar miembro:', err);

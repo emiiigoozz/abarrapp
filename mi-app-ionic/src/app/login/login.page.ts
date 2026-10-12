@@ -1,8 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import axios from 'axios';
-import { environment } from '../../environments/environment';
 import { StorageService } from '../shared/storage.service';
+import { ApiService } from '../shared/api.service';
 import { mensajeError } from '../shared/network.service';
 
 @Component({
@@ -22,6 +21,7 @@ export class LoginPage implements OnInit {
   constructor(
     private router: Router,
     private storage: StorageService,
+    private api: ApiService,
   ) { }
 
   ngOnInit() {
@@ -46,10 +46,7 @@ export class LoginPage implements OnInit {
     this.loading = true;
 
     try {
-      const { data } = await axios.post(`${environment.apiUrl}/login.php`, {
-        email: this.email,
-        password: this.password,
-      }, { timeout: 10000 });
+      const data = await this.api.login(this.email, this.password);
 
       if (data.success) {
         this.storage.set('token', data.token);

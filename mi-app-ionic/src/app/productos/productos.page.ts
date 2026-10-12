@@ -1,13 +1,12 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import axios from 'axios';
 import { Subscription } from 'rxjs';
-import { environment } from '../../environments/environment';
 import { HidScannerService } from '../shared/hid-scanner.service';
 import { StorageService } from '../shared/storage.service';
+import { ApiService } from '../shared/api.service';
 import { mensajeError } from '../shared/network.service';
-import { Producto } from '../models';
+import { Producto, ProductoForm } from '../models';
 
 @Component({
   selector: 'app-productos',
@@ -17,7 +16,6 @@ import { Producto } from '../models';
 })
 export class ProductosPage implements OnInit, OnDestroy {
 
-  private apiUrl = `${environment.apiUrl}/productos.php`;
   private tiendaId = 0;
 
   productos: Producto[] = [];
@@ -39,6 +37,7 @@ export class ProductosPage implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private storage: StorageService,
+    private api: ApiService,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
     private hidScanner: HidScannerService,
@@ -85,18 +84,11 @@ export class ProductosPage implements OnInit, OnDestroy {
     this.errorMsg = '';
     try {
       const { datos, desdeCache } = await this.storage.obtenerConCache('productos',
-        () => axios.get(this.apiUrl, { params: { tienda_id: this.tiendaId }, timeout: 10000 }).then(r => r.data.data as any[]));
+        () => this.api.listarProductos(this.tiendaId));
       if (desdeCache) {
         this.errorMsg = this.storage.mensajeCache();
       }
-      this.productos = datos.map(p => ({
-        ...p,
-        id: Number(p.id),
-        tienda_id: Number(p.tienda_id),
-        costo: Number(p.costo),
-        precio_venta: Number(p.precio_venta),
-        stock: Number(p.stock),
-      }));
+      this.productos = datos;
     } catch (err) {
       console.error('Error al cargar productos:', err);
       this.errorMsg = mensajeError(err, 'No se pudo cargar la lista de productos');
@@ -136,8 +128,7 @@ export class ProductosPage implements OnInit, OnDestroy {
 
     this.guardando = true;
 
-    const payload = {
-      tienda_id: this.tiendaId,
+    const payload: ProductoForm = {
       nombre: this.nombre,
       codigo: this.codigo,
       categoria: this.categoria,
@@ -148,9 +139,9 @@ export class ProductosPage implements OnInit, OnDestroy {
 
     try {
       if (this.modoEdicion) {
-        await axios.put(`${this.apiUrl}?id=${this.editandoId}`, payload, { timeout: 10000 });
+        await this.api.actualizarProducto(this.tiendaId, this.editandoId!, payload);
       } else {
-        await axios.post(this.apiUrl, payload, { timeout: 10000 });
+        await this.api.crearProducto(this.tiendaId, payload);
       }
       this.cancelarEdicion();
       await this.cargarProductos();
@@ -181,7 +172,7 @@ export class ProductosPage implements OnInit, OnDestroy {
 
   private async confirmarEliminar(id: number) {
     try {
-      await axios.delete(`${this.apiUrl}?id=${id}`, { params: { tienda_id: this.tiendaId }, timeout: 10000 });
+      await this.api.eliminarProducto(this.tiendaId, id);
       if (this.editandoId === id) {
         this.cancelarEdicion();
       }

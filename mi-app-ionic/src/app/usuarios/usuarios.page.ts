@@ -1,11 +1,10 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import axios from 'axios';
-import { environment } from '../../environments/environment';
 import { StorageService } from '../shared/storage.service';
+import { ApiService } from '../shared/api.service';
 import { mensajeError } from '../shared/network.service';
-import { Usuario } from '../models';
+import { Usuario, UsuarioForm } from '../models';
 
 @Component({
   selector: 'app-usuarios',
@@ -15,7 +14,6 @@ import { Usuario } from '../models';
 })
 export class UsuariosPage implements OnInit {
 
-  private apiUrl = `${environment.apiUrl}/usuarios.php`;
 
   usuarios: Usuario[] = [];
   cargando = false;
@@ -33,6 +31,7 @@ export class UsuariosPage implements OnInit {
   constructor(
     private router: Router,
     private storage: StorageService,
+    private api: ApiService,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
   ) { }
@@ -53,13 +52,7 @@ export class UsuariosPage implements OnInit {
     this.cargando = true;
     this.errorMsg = '';
     try {
-      const { data } = await axios.get(this.apiUrl, { timeout: 10000 });
-      // MySQL/PDO devuelve id y estado como strings; los normalizamos a número.
-      this.usuarios = (data.data as any[]).map(u => ({
-        ...u,
-        id: Number(u.id),
-        estado: Number(u.estado),
-      }));
+      this.usuarios = await this.api.listarUsuarios();
     } catch (err) {
       console.error('Error al cargar usuarios:', err);
       this.errorMsg = mensajeError(err, 'No se pudo cargar la lista de usuarios');
@@ -104,7 +97,7 @@ export class UsuariosPage implements OnInit {
 
     this.guardando = true;
 
-    const payload: any = {
+    const payload: UsuarioForm = {
       nombre: this.nombre,
       usuario: this.usuario,
       email: this.email,
@@ -117,9 +110,9 @@ export class UsuariosPage implements OnInit {
 
     try {
       if (this.modoEdicion) {
-        await axios.put(`${this.apiUrl}?id=${this.editandoId}`, payload, { timeout: 10000 });
+        await this.api.actualizarUsuario(this.editandoId!, payload);
       } else {
-        await axios.post(this.apiUrl, payload, { timeout: 10000 });
+        await this.api.crearUsuario(payload);
       }
       this.cancelarEdicion();
       await this.cargarUsuarios();
@@ -150,7 +143,7 @@ export class UsuariosPage implements OnInit {
 
   private async confirmarEliminar(id: number) {
     try {
-      await axios.delete(`${this.apiUrl}?id=${id}`, { timeout: 10000 });
+      await this.api.eliminarUsuario(id);
       if (this.editandoId === id) {
         this.cancelarEdicion();
       }

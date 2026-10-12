@@ -1,9 +1,8 @@
 import { ChangeDetectorRef, Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import axios from 'axios';
-import { environment } from '../../environments/environment';
 import { StorageService } from '../shared/storage.service';
+import { ApiService } from '../shared/api.service';
 import { mensajeError } from '../shared/network.service';
 import { Tienda } from '../models';
 
@@ -15,7 +14,6 @@ import { Tienda } from '../models';
 })
 export class TiendasPage implements OnInit {
 
-  private apiUrl = `${environment.apiUrl}/tiendas.php`;
   private usuarioId!: number;
 
   tiendas: Tienda[] = [];
@@ -27,6 +25,7 @@ export class TiendasPage implements OnInit {
   constructor(
     private router: Router,
     private storage: StorageService,
+    private api: ApiService,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
   ) { }
@@ -46,10 +45,7 @@ export class TiendasPage implements OnInit {
     this.errorMsg = '';
     try {
       const { datos, desdeCache } = await this.storage.obtenerConCache('tiendas',
-        () => axios.get(this.apiUrl, {
-          params: { usuario_id: this.usuarioId },
-          timeout: 10000,
-        }).then(r => r.data.data as Tienda[]));
+        () => this.api.listarTiendas(this.usuarioId));
       if (desdeCache) {
         this.errorMsg = this.storage.mensajeCache();
       }
@@ -83,11 +79,7 @@ export class TiendasPage implements OnInit {
     this.procesando = true;
     this.errorMsg = '';
     try {
-      await axios.post(this.apiUrl, {
-        accion: 'crear',
-        usuario_id: this.usuarioId,
-        nombre: nombre.trim(),
-      }, { timeout: 10000 });
+      await this.api.crearTienda(this.usuarioId, nombre.trim());
 
       this.okMsg = 'Tienda creada correctamente';
       await this.cargarTiendas();
@@ -122,13 +114,9 @@ export class TiendasPage implements OnInit {
     this.errorMsg = '';
     this.okMsg = '';
     try {
-      const { data } = await axios.post(this.apiUrl, {
-        accion: 'unirse',
-        usuario_id: this.usuarioId,
-        codigo_invitacion: codigo.trim(),
-      }, { timeout: 10000 });
+      const data = await this.api.unirseATienda(this.usuarioId, codigo.trim());
 
-      this.okMsg = data.message;
+      this.okMsg = data.message ?? '';
       await this.cargarTiendas();
     } catch (err: any) {
       console.error('Error al unirse a tienda:', err);

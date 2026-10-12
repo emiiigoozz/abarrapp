@@ -1,9 +1,8 @@
 import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import axios from 'axios';
 import Chart from 'chart.js/auto';
-import { environment } from '../../environments/environment';
 import { StorageService } from '../shared/storage.service';
+import { ApiService } from '../shared/api.service';
 import { mensajeError } from '../shared/network.service';
 import { AlertaPerdida, AlertaStock, GananciaDia, Resumen, TopProducto } from '../models';
 
@@ -15,7 +14,6 @@ import { AlertaPerdida, AlertaStock, GananciaDia, Resumen, TopProducto } from '.
 })
 export class DashboardPage implements OnInit, AfterViewInit {
 
-  private apiUrl = `${environment.apiUrl}/dashboard.php`;
   private tiendaId = 0;
   private chart: Chart | null = null;
   private chartDataPendiente: GananciaDia[] | null = null;
@@ -33,6 +31,7 @@ export class DashboardPage implements OnInit, AfterViewInit {
   constructor(
     private router: Router,
     private storage: StorageService,
+    private api: ApiService,
     private cdr: ChangeDetectorRef,
   ) { }
 
@@ -62,42 +61,16 @@ export class DashboardPage implements OnInit, AfterViewInit {
     this.errorMsg = '';
     try {
       const { datos: d, desdeCache } = await this.storage.obtenerConCache('dashboard',
-        () => axios.get(this.apiUrl, { params: { tienda_id: this.tiendaId }, timeout: 10000 }).then(r => r.data.data));
+        () => this.api.obtenerDashboard(this.tiendaId));
       if (desdeCache) {
         this.errorMsg = this.storage.mensajeCache();
       }
 
-      this.resumen = {
-        ingresos: Number(d.resumen.ingresos),
-        costos: Number(d.resumen.costos),
-        ganancia: Number(d.resumen.ganancia),
-        unidades: Number(d.resumen.unidades),
-      };
-
-      this.topProductos = (d.top_productos as any[]).map(p => ({
-        id: Number(p.id),
-        nombre: p.nombre,
-        unidades_vendidas: Number(p.unidades_vendidas),
-        ganancia: Number(p.ganancia),
-      }));
-
-      this.stockBajo = (d.stock_bajo as any[]).map(s => ({
-        id: Number(s.id),
-        nombre: s.nombre,
-        stock: Number(s.stock),
-      }));
-
-      this.productosConPerdida = (d.productos_con_perdida as any[]).map(p => ({
-        id: Number(p.id),
-        nombre: p.nombre,
-        costo: Number(p.costo),
-        precio_venta: Number(p.precio_venta),
-      }));
-
-      const porDia: GananciaDia[] = (d.ganancias_por_dia as any[]).map(g => ({
-        dia: g.dia,
-        ganancia: Number(g.ganancia),
-      }));
+      this.resumen = d.resumen;
+      this.topProductos = d.top_productos;
+      this.stockBajo = d.stock_bajo;
+      this.productosConPerdida = d.productos_con_perdida;
+      const porDia = d.ganancias_por_dia;
 
       if (this.chartCanvas) {
         this.pintarChart(porDia);

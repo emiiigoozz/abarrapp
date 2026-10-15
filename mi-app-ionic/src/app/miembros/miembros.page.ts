@@ -95,12 +95,16 @@ export class MiembrosPage implements OnInit {
           text: 'Quitar',
           role: 'destructive',
           handler: async () => {
+            this.cargando = true;
+            this.cdr.detectChanges();
             try {
               await this.api.eliminarMiembro(m.id, this.usuarioId);
               await this.cargarMiembros();
             } catch (err: any) {
               console.error('Error al eliminar miembro:', err);
               this.errorMsg = mensajeError(err, 'No se pudo quitar al miembro');
+            } finally {
+              this.cargando = false;
               this.cdr.detectChanges();
             }
           },

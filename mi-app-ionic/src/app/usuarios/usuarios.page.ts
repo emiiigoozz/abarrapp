@@ -142,6 +142,8 @@ export class UsuariosPage implements OnInit {
   }
 
   private async confirmarEliminar(id: number) {
+    this.cargando = true;
+    this.cdr.detectChanges();
     try {
       await this.api.eliminarUsuario(id);
       if (this.editandoId === id) {
@@ -152,6 +154,7 @@ export class UsuariosPage implements OnInit {
       console.error('Error al eliminar usuario:', err);
       this.errorMsg = mensajeError(err, 'No se pudo eliminar el usuario');
     } finally {
+      this.cargando = false;
       this.cdr.detectChanges();
     }
   }

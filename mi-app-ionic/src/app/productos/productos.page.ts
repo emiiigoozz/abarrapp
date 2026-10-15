@@ -171,6 +171,8 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   private async confirmarEliminar(id: number) {
+    this.cargando = true;
+    this.cdr.detectChanges();
     try {
       await this.api.eliminarProducto(this.tiendaId, id);
       if (this.editandoId === id) {
@@ -181,6 +183,7 @@ export class ProductosPage implements OnInit, OnDestroy {
       console.error('Error al eliminar producto:', err);
       this.errorMsg = mensajeError(err, 'No se pudo eliminar el producto');
     } finally {
+      this.cargando = false;
       this.cdr.detectChanges();
     }
   }

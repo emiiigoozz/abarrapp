@@ -1,7 +1,8 @@
 <ion-app>
-  <div class="offline-banner" *ngIf="!online()" role="status">
-    <ion-icon name="cloud-offline-outline"></ion-icon>
-    <span>Sin conexión · se muestran los últimos datos guardados</span>
-  </div>
   <ion-router-outlet></ion-router-outlet>
+  <!-- Estado de conexión y sincronización: siempre visible en la parte inferior -->
+  <div class="barra-estado" [ngClass]="estado()" (click)="tocarBarra()" role="status" aria-live="polite">
+    <ion-icon [name]="icono()" [class.girando]="estado() === 'sincronizando'"></ion-icon>
+    <span>{{ texto() }}</span>
+  </div>
 </ion-app>

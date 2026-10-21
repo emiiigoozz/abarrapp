@@ -5,8 +5,11 @@ import { Subscription } from 'rxjs';
 import { HidScannerService } from '../shared/hid-scanner.service';
 import { StorageService } from '../shared/storage.service';
 import { ApiService } from '../shared/api.service';
+import { SyncService } from '../shared/sync.service';
 import { mensajeError } from '../shared/network.service';
 import { Producto, ProductoForm } from '../models';
+
+const GUARDADO_LOCAL = 'Guardado en el teléfono: se enviará al servidor cuando vuelva la conexión.';
 
 @Component({
   selector: 'app-productos',
@@ -19,9 +22,12 @@ export class ProductosPage implements OnInit, OnDestroy {
   private tiendaId = 0;
 
   productos: Producto[] = [];
+  /** Lo último que respondió el servidor (o la caché); en pantalla se le suman los cambios pendientes. */
+  private base: Producto[] = [];
   cargando = false;
   guardando = false;
   errorMsg = '';
+  okMsg = '';
 
   editandoId: number | null = null;
   nombre = '';
@@ -33,11 +39,14 @@ export class ProductosPage implements OnInit, OnDestroy {
 
   mostrarScanner = false;
   private hidSub?: Subscription;
+  private syncSub?: Subscription;
+  private yaEntro = false;
 
   constructor(
     private router: Router,
     private storage: StorageService,
     private api: ApiService,
+    private sync: SyncService,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
     private hidScanner: HidScannerService,
@@ -55,6 +64,8 @@ export class ProductosPage implements OnInit, OnDestroy {
       return;
     }
     this.cargarProductos();
+    // Al terminar una sincronización se recargan los datos reales del servidor.
+    this.syncSub = this.sync.sincronizado$.subscribe(() => this.cargarProductos());
 
     this.hidSub = this.hidScanner.scan$.subscribe(codigo => {
       this.onCodigoEscaneado(codigo);
@@ -62,8 +73,20 @@ export class ProductosPage implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Ionic reutiliza la pantalla al volver a ella (p. ej. desde las pestañas), así que ngOnInit no
+   * se repite. Se recarga al reingresar para mostrar lo que cambió en otras pantallas.
+   */
+  ionViewWillEnter() {
+    if (this.yaEntro) {
+      this.cargarProductos();
+    }
+    this.yaEntro = true;
+  }
+
   ngOnDestroy() {
     this.hidSub?.unsubscribe();
+    this.syncSub?.unsubscribe();
   }
 
   get modoEdicion(): boolean {
@@ -88,7 +111,8 @@ export class ProductosPage implements OnInit, OnDestroy {
       if (desdeCache) {
         this.errorMsg = this.storage.mensajeCache();
       }
-      this.productos = datos;
+      this.base = datos;
+      this.refrescarLocal();
     } catch (err) {
       console.error('Error al cargar productos:', err);
       this.errorMsg = mensajeError(err, 'No se pudo cargar la lista de productos');
@@ -118,8 +142,14 @@ export class ProductosPage implements OnInit, OnDestroy {
     this.stock = null;
   }
 
+  /** Vista local: datos del servidor + cambios hechos sin conexión que aún no se envían. */
+  private refrescarLocal() {
+    this.productos = this.sync.aplicarAProductos(this.tiendaId, this.base);
+  }
+
   async guardar() {
     this.errorMsg = '';
+    this.okMsg = '';
 
     if (!this.nombre || this.costo === null || this.precio_venta === null || this.stock === null) {
       this.errorMsg = 'Nombre, costo, precio de venta y stock son obligatorios';
@@ -138,13 +168,16 @@ export class ProductosPage implements OnInit, OnDestroy {
     };
 
     try {
-      if (this.modoEdicion) {
-        await this.api.actualizarProducto(this.tiendaId, this.editandoId!, payload);
-      } else {
-        await this.api.crearProducto(this.tiendaId, payload);
-      }
+      const { encolado } = await this.sync.enviarOEncolar(this.modoEdicion
+        ? { tipo: 'actualizarProducto', tiendaId: this.tiendaId, productoId: this.editandoId!, producto: payload, descripcion: `Editar "${payload.nombre}"` }
+        : { tipo: 'crearProducto', tiendaId: this.tiendaId, productoId: this.sync.idTemporal(), producto: payload, descripcion: `Crear "${payload.nombre}"` });
       this.cancelarEdicion();
-      await this.cargarProductos();
+      if (encolado) {
+        this.okMsg = GUARDADO_LOCAL;
+        this.refrescarLocal();
+      } else {
+        await this.cargarProductos();
+      }
     } catch (err: any) {
       console.error('Error al guardar producto:', err);
       this.errorMsg = mensajeError(err, 'No se pudo guardar el producto');
@@ -172,13 +205,21 @@ export class ProductosPage implements OnInit, OnDestroy {
 
   private async confirmarEliminar(id: number) {
     this.cargando = true;
+    this.okMsg = '';
     this.cdr.detectChanges();
     try {
-      await this.api.eliminarProducto(this.tiendaId, id);
+      const nombre = this.productos.find(p => p.id === id)?.nombre ?? '';
+      const { encolado } = await this.sync.enviarOEncolar(
+        { tipo: 'eliminarProducto', tiendaId: this.tiendaId, productoId: id, descripcion: `Eliminar "${nombre}"` });
       if (this.editandoId === id) {
         this.cancelarEdicion();
       }
-      await this.cargarProductos();
+      if (encolado) {
+        this.okMsg = GUARDADO_LOCAL;
+        this.refrescarLocal();
+      } else {
+        await this.cargarProductos();
+      }
     } catch (err) {
       console.error('Error al eliminar producto:', err);
       this.errorMsg = mensajeError(err, 'No se pudo eliminar el producto');

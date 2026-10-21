@@ -22,6 +22,8 @@ En este documento registro para qué usé la IA en cada etapa del proyecto: qué
 | 8 | 2026-10-02 | Manejo de conexión y errores | Detección de red, mensajes por tipo de error, prueba offline |
 | 9 | 2026-10-02 | Versión 1.0 | Modelo de datos centralizado, inventario por tienda, README, APK v1.0.0 |
 | 10 | 2026-10-12 | Arquitectura cliente → API → BD | `ApiService` centralizado, modelos JSON, análisis de la arquitectura |
+| 11 | 2026-10-14 | Conexión con API REST | Loading visible en GET/DELETE, capturas de GET/POST/PUT/DELETE en el emulador |
+| 12 | 2026-10-20 | Información local y remota | Cola de sincronización offline, barra de estado, diagrama del proceso |
 
 ---
 
@@ -165,6 +167,29 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 
 ---
 
+## Sesión 11 — Conexión con API REST
+
+**Prompt:** la descripción de la entrega (peticiones GET, POST, PUT/PATCH y DELETE, servicios Angular, manejo de respuestas y errores, loading, capturas y código en Git).
+
+**Qué hizo la IA:** revisó cada punto; encontró que las cargas (GET) y los borrados (DELETE) no mostraban ningún indicador y agregó una barra de progreso bajo el encabezado. Para las capturas controló la app dentro del emulador mediante la depuración remota del WebView (como `chrome://inspect`), porque escribir con el teclado del emulador por coordenadas era poco confiable.
+
+---
+
+## Sesión 12 — Información local y remota (sincronización)
+
+**Prompt:** la descripción de la entrega (persistencia local, consulta remota, sincronización, pérdida y recuperación de conexión, indicador visual online/offline y diagrama del proceso).
+
+**Qué hizo la IA:**
+- Señaló que la app solo sincronizaba en un sentido (servidor → teléfono): sin red no se podía vender ni editar.
+- Creó `SyncService`: una cola persistente de cambios hechos sin conexión que se envía sola, en orden, al volver la red; maneja ids temporales de productos creados sin conexión y separa los cambios que el servidor rechaza.
+- Cambió la barra de "Sin conexión" por una barra de estado siempre visible con 5 estados.
+- Probó la lógica contra la API real (12 casos) y el flujo completo en el emulador: crear y vender sin red, cerrar y reabrir la app, recuperar la conexión y un conflicto provocado por "otro dispositivo".
+- Dibujó el diagrama del proceso de sincronización.
+
+**Decisión:** se retomó la idea de la cola offline que en la v1.0 se había descartado (ver "Código descartado"). Se resolvió el riesgo de conflictos de stock dejando que el servidor decida: si ya no alcanza el stock, la venta se rechaza completa y se le muestra al usuario.
+
+---
+
 ## Código aceptado, modificado o descartado
 
 ### Aceptado sin cambios
@@ -186,7 +211,7 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 
 - **Login con Google/Apple:** los botones quedaron como elementos visuales, pero no se implementó OAuth porque no era necesario para el alcance del proyecto.
 - **JWT completo:** la IA sugirió JWT con firma, expiración y *refresh tokens*. Se simplificó a un token aleatorio (`bin2hex(random_bytes(32))`). Queda como limitación conocida: la API todavía no valida el token en cada petición.
-- **SQLite para ventas sin conexión:** se evaluó una cola de ventas offline, pero se descartó para la v1.0 porque requiere resolver conflictos de stock entre varios dispositivos.
+- *(Retomado en la sesión 12)* **Cola de ventas sin conexión:** se descartó para la v1.0 por los posibles conflictos de stock entre dispositivos; después se implementó con Preferences, dejando que el servidor rechace las ventas sin stock.
 - *(Retomado)* **Escáner de códigos de barras:** en la sesión 4 se dejó fuera, pero en la sesión 5 se implementó.
 
 ---
@@ -205,6 +230,10 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 | 8 | Todas las tiendas compartían el inventario | `productos` no tenía `tienda_id` | Migración SQL + filtro por tienda en la API y en la app | Sí |
 | 9 | El emulador se trababa ("System UI isn't responding") | La PC tenía menos de 1 GB de RAM libre | Cerrar procesos (Gradle, Android Studio) y usar una imagen más ligera | Sí (diagnóstico) |
 | 10 | `estado` de los usuarios siempre "Inactivo" | PDO devuelve números como string | `Number()` al mapear | No: lo detecté con `curl` |
+| 11 | Sin red, Movimientos no mostraba ni los productos | Productos y movimientos se cargaban con `Promise.all`: si no había copia guardada de uno, fallaban los dos | `Promise.allSettled`: cada lista se carga por separado | Sí (detectado en la prueba del emulador) |
+| 12 | Un producto creado en Productos no aparecía al volver a Movimientos | Ionic reutiliza la pantalla al volver a ella y `ngOnInit` no se repite | Recargar en `ionViewWillEnter` al reingresar | Sí (detectado en la prueba del emulador) |
+| 13 | Los avisos mostraban `<br>` literal | Ionic 9 no interpreta HTML en los mensajes de alerta (seguridad) | Saltos de línea `\n` con `white-space: pre-line` | Sí |
+| 14 | Android cerraba la app sola en el emulador | El emulador tenía 2 GB de RAM y Android 17 con Play Store no cabía | Subir la RAM del emulador a 3 GB | Sí (diagnóstico con `lowmemorykiller` en el log) |
 
 ---
 

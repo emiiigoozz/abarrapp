@@ -13,6 +13,8 @@ export interface Producto {
   precio_venta: number;
   stock: number;
   creado_en: string;
+  /** true si tiene cambios hechos sin conexión que aún no llegan al servidor. */
+  pendiente?: boolean;
 }
 
 /** Datos del producto que necesita el punto de venta. */

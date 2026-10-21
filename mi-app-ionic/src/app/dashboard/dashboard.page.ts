@@ -1,8 +1,10 @@
-import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import { AfterViewInit, ChangeDetectorRef, Component, ElementRef, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import Chart from 'chart.js/auto';
+import { Subscription } from 'rxjs';
 import { StorageService } from '../shared/storage.service';
 import { ApiService } from '../shared/api.service';
+import { SyncService } from '../shared/sync.service';
 import { mensajeError } from '../shared/network.service';
 import { AlertaPerdida, AlertaStock, GananciaDia, Resumen, TopProducto } from '../models';
 
@@ -12,7 +14,10 @@ import { AlertaPerdida, AlertaStock, GananciaDia, Resumen, TopProducto } from '.
   styleUrls: ['./dashboard.page.scss'],
   standalone: false,
 })
-export class DashboardPage implements OnInit, AfterViewInit {
+export class DashboardPage implements OnInit, AfterViewInit, OnDestroy {
+
+  private syncSub?: Subscription;
+  private yaEntro = false;
 
   private tiendaId = 0;
   private chart: Chart | null = null;
@@ -32,6 +37,7 @@ export class DashboardPage implements OnInit, AfterViewInit {
     private router: Router,
     private storage: StorageService,
     private api: ApiService,
+    private sync: SyncService,
     private cdr: ChangeDetectorRef,
   ) { }
 
@@ -47,6 +53,23 @@ export class DashboardPage implements OnInit, AfterViewInit {
       return;
     }
     this.cargarDashboard();
+    // Las ventas hechas sin conexión cambian las ganancias: al sincronizar se recalcula.
+    this.syncSub = this.sync.sincronizado$.subscribe(() => this.cargarDashboard());
+  }
+
+  /**
+   * Ionic reutiliza la pantalla al volver a ella (p. ej. desde las pestañas), así que ngOnInit no
+   * se repite. Se recarga al reingresar para mostrar lo que cambió en otras pantallas.
+   */
+  ionViewWillEnter() {
+    if (this.yaEntro) {
+      this.cargarDashboard();
+    }
+    this.yaEntro = true;
+  }
+
+  ngOnDestroy() {
+    this.syncSub?.unsubscribe();
   }
 
   ngAfterViewInit() {

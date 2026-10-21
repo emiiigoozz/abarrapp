@@ -14,6 +14,8 @@ export interface Movimiento {
   costo_unitario: number;
   precio_unitario: number;
   fecha: string;
+  /** true si se registró sin conexión y aún no llega al servidor. */
+  pendiente?: boolean;
 }
 
 /** Línea del carrito en el punto de venta; se persiste en el dispositivo. */

@@ -1,22 +1,61 @@
-.offline-banner {
+$alto-barra: 32px;
+
+// Las páginas terminan donde empieza la barra, así nunca les tapa contenido.
+ion-router-outlet {
+  bottom: calc(#{$alto-barra} + env(safe-area-inset-bottom));
+}
+
+.barra-estado {
   position: fixed;
   left: 0;
   right: 0;
   bottom: 0;
   z-index: 9999;
+  height: calc(#{$alto-barra} + env(safe-area-inset-bottom));
+  padding: 0 12px env(safe-area-inset-bottom);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
-  background: #f59e0b;
-  color: #1a1204;
-  font-size: 13px;
+  gap: 7px;
+  font-size: 12.5px;
   font-weight: 600;
-  text-align: center;
+  transition: background 0.3s ease, color 0.3s ease;
 
   ion-icon {
-    font-size: 18px;
+    font-size: 16px;
     flex-shrink: 0;
   }
+
+  &.online {
+    background: #0e2a20;
+    color: #2dd4a7;
+  }
+
+  &.offline {
+    background: #f59e0b;
+    color: #1a1204;
+  }
+
+  &.sincronizando {
+    background: #1d4ed8;
+    color: #fff;
+  }
+
+  &.pendientes {
+    background: #fbbf24;
+    color: #1a1204;
+  }
+
+  &.fallidas {
+    background: #dc2626;
+    color: #fff;
+  }
+}
+
+.girando {
+  animation: girar 1s linear infinite;
+}
+
+@keyframes girar {
+  to { transform: rotate(360deg); }
 }

@@ -32,7 +32,7 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
   - los productos más vendidos.
 - **Gestión de miembros:** el admin acepta solicitudes y cambia roles.
 - **Gestión de usuarios del sistema:** CRUD de usuarios.
-- **Funciona sin conexión:** detecta si hay red, muestra los últimos datos guardados y explica cada error con un mensaje claro.
+- **Funciona sin conexión y sincroniza:** sin red se puede seguir vendiendo, recibiendo mercancía y editando productos; los cambios se guardan en el teléfono y se envían solos al volver la conexión. Una barra inferior indica siempre el estado (en línea, sin conexión, sincronizando, pendientes o con errores).
 
 ## Cómo cumple cada requisito de la v1.0
 
@@ -44,7 +44,7 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 | CRUD | Productos (`/productos`), usuarios (`/usuarios`), tiendas y miembros |
 | Persistencia | [Persistencia y modo offline](#persistencia-y-modo-offline) — Capacitor Preferences |
 | Manejo de errores | [Manejo de errores](#manejo-de-errores) — `mensajeError()` en `shared/network.service.ts` |
-| Operación offline básica | Detección de red + caché local + aviso en pantalla |
+| Operación offline básica | Detección de red + caché local + cola de sincronización + barra de estado |
 | Repositorio Git | Este repositorio |
 | APK | [Compilar el APK](#4-compilar-y-ejecutar-en-android) |
 | README | Este archivo |
@@ -145,11 +145,25 @@ Estrategia **red primero, caché como respaldo** (`StorageService.obtenerConCach
 2. Si no hay red o la API falla, se muestra la última copia con el aviso *"mostrando los últimos datos guardados"*.
 3. Sin red, la app no intenta la petición, para no esperar los 10 s de tiempo límite.
 
-`NetworkService` usa Capacitor Network para detectar los cambios de conexión:
-- muestra una barra naranja de **"Sin conexión"** en todas las pantallas;
-- al volver la conexión, avisa con **"Conexión restablecida"**.
+### Sincronización (`SyncService`)
 
-Sin conexión los datos son de solo lectura. Para vender o editar se necesita la API, porque el inventario es compartido entre los miembros de la tienda.
+Las operaciones que modifican datos (venta, entrada de mercancía, crear/editar/borrar producto) pasan por `SyncService.enviarOEncolar()`:
+
+1. Si hay conexión y no hay cambios esperando, se envían a la API como siempre.
+2. Si no hay conexión (o el servidor no responde), se guardan en una **cola persistente** (`sync_cola` en Preferences) y se aplican de inmediato en pantalla con el distintivo **«Pendiente»**. Los productos creados sin conexión reciben un id temporal negativo.
+3. Cuando `NetworkService` (Capacitor Network) avisa que volvió la red —o cada 15 s si hay red pero el servidor no respondía—, la cola se envía **en el mismo orden** en que se hizo. Al crear un producto, su id temporal se reemplaza por el real en los cambios siguientes.
+4. Si el servidor rechaza un cambio (por ejemplo, otro dispositivo ya vendió ese stock: HTTP 409), pasa a **«fallidas»** para no bloquear a los demás, y el usuario ve el motivo.
+5. Al terminar, las pantallas recargan los datos reales del servidor y aparece el aviso *«N cambios sincronizados»*.
+
+**Barra de estado** (siempre visible en la parte inferior; al tocarla muestra la lista de cambios):
+
+| Estado | Color | Texto |
+|---|---|---|
+| En línea | verde | En línea · todo sincronizado |
+| Sin conexión | naranja | Sin conexión · N cambios por enviar |
+| Enviando la cola | azul | Sincronizando N cambios… |
+| Hay red pero el servidor no responde | ámbar | N cambios pendientes · reintentando |
+| El servidor rechazó algún cambio | rojo | N cambios no se pudieron enviar · toca para ver |
 
 ## Manejo de errores
 
@@ -252,6 +266,7 @@ App II/
         ├── shared/
         │   ├── api.service.ts     ← único acceso a la API REST (1 método por endpoint)
         │   ├── storage.service.ts ← persistencia + caché offline
+        │   ├── sync.service.ts    ← cola de cambios offline y sincronización
         │   ├── network.service.ts ← detección de red + mensajeError()
         │   ├── hid-scanner.service.ts
         │   └── barcode-scanner/   ← escáner con cámara
@@ -263,7 +278,7 @@ App II/
 ## Limitaciones conocidas
 
 - La API todavía **no valida el token** en cada petición. El control de acceso por rol se hace en la app. Para producción haría falta validar el token y el rol en el servidor.
-- Sin conexión solo se puede consultar. Las ventas sin conexión necesitarían una cola de sincronización (por ejemplo con SQLite).
+- La sincronización resuelve conflictos rechazando el cambio que ya no es válido (p. ej. sin stock) y avisando al usuario; no fusiona cambios automáticamente.
 - Para iOS se necesita una Mac con Xcode. Solo se probó en Android.
 
 ## Autor

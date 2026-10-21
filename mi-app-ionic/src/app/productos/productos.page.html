@@ -62,6 +62,7 @@
     </div>
 
     <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
+    <p class="ok-msg" *ngIf="okMsg">{{ okMsg }}</p>
 
     <div class="form-actions">
       <ion-button class="save-btn" shape="round" [disabled]="guardando" (click)="guardar()">
@@ -104,6 +105,7 @@
         <span class="badge" [class.alerta]="p.stock <= 5">
           Stock: {{ p.stock }}
         </span>
+        <span class="badge pendiente" *ngIf="p.pendiente">Pendiente</span>
       </div>
 
       <div class="item-actions">

@@ -178,6 +178,7 @@
           {{ m.tipo === 'entrada' ? 'Entrada' : 'Venta' }}
         </span>
         <span class="badge activo" *ngIf="m.tipo === 'salida'">+${{ ganancia(m).toFixed(2) }}</span>
+        <span class="badge pendiente" *ngIf="m.pendiente">Pendiente</span>
       </div>
     </div>
   </div>

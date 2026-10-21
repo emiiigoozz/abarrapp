@@ -5,8 +5,11 @@ import { Subscription } from 'rxjs';
 import { HidScannerService } from '../shared/hid-scanner.service';
 import { StorageService } from '../shared/storage.service';
 import { ApiService } from '../shared/api.service';
+import { SyncService } from '../shared/sync.service';
 import { mensajeError } from '../shared/network.service';
-import { ItemCarrito, Movimiento, ProductoVenta } from '../models';
+import { ItemCarrito, Movimiento, ProductoVenta, RespuestaVenta } from '../models';
+
+const GUARDADO_LOCAL = 'se guardó en el teléfono y se enviará al servidor cuando vuelva la conexión.';
 
 @Component({
   selector: 'app-movimientos',
@@ -22,6 +25,9 @@ export class MovimientosPage implements OnInit, OnDestroy {
 
   productos: ProductoVenta[] = [];
   movimientos: Movimiento[] = [];
+  // Lo último que respondió el servidor (o la caché); en pantalla se le suman los cambios pendientes.
+  private productosBase: ProductoVenta[] = [];
+  private movimientosBase: Movimiento[] = [];
   cargando = false;
   errorMsg = '';
   okMsg = '';
@@ -47,11 +53,14 @@ export class MovimientosPage implements OnInit, OnDestroy {
 
   mostrarScanner = false;
   private hidSub?: Subscription;
+  private syncSub?: Subscription;
+  private yaEntro = false;
 
   constructor(
     private router: Router,
     private storage: StorageService,
     private api: ApiService,
+    private sync: SyncService,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
     private hidScanner: HidScannerService,
@@ -71,6 +80,8 @@ export class MovimientosPage implements OnInit, OnDestroy {
     // Recupera la venta que estaba en curso si se cerró la app.
     this.carrito = this.storage.getJSON<ItemCarrito[]>('carrito') || [];
     this.cargarTodo();
+    // Al terminar una sincronización se recargan los datos reales del servidor.
+    this.syncSub = this.sync.sincronizado$.subscribe(() => this.cargarTodo());
 
     this.hidSub = this.hidScanner.scan$.subscribe(codigo => {
       this.onCodigoEscaneado(codigo);
@@ -78,8 +89,20 @@ export class MovimientosPage implements OnInit, OnDestroy {
     });
   }
 
+  /**
+   * Ionic reutiliza la pantalla al volver a ella (p. ej. desde las pestañas), así que ngOnInit no
+   * se repite. Se recarga al reingresar para mostrar lo que cambió en otras pantallas.
+   */
+  ionViewWillEnter() {
+    if (this.yaEntro) {
+      this.cargarTodo();
+    }
+    this.yaEntro = true;
+  }
+
   ngOnDestroy() {
     this.hidSub?.unsubscribe();
+    this.syncSub?.unsubscribe();
   }
 
   ganancia(m: Movimiento): number {
@@ -108,23 +131,38 @@ export class MovimientosPage implements OnInit, OnDestroy {
     this.cargando = true;
     this.errorMsg = '';
     try {
-      const [productosRes, movimientosRes] = await Promise.all([
+      // Cada lista se carga por separado: si no hay copia guardada de una (p. ej. es la primera
+      // vez que se abre esta pantalla sin conexión), la otra igual se muestra.
+      const [productosRes, movimientosRes] = await Promise.allSettled([
         this.storage.obtenerConCache('productos', () => this.api.listarProductos(this.tiendaId)),
         this.storage.obtenerConCache('movimientos', () => this.api.listarMovimientos(this.tiendaId)),
       ]);
-      if (productosRes.desdeCache || movimientosRes.desdeCache) {
+      if (productosRes.status === 'fulfilled') {
+        this.productosBase = productosRes.value.datos;
+      }
+      if (movimientosRes.status === 'fulfilled') {
+        this.movimientosBase = movimientosRes.value.datos;
+      }
+      this.refrescarLocal();
+
+      const fallo = [productosRes, movimientosRes].find(r => r.status === 'rejected') as PromiseRejectedResult | undefined;
+      const usoCache = [productosRes, movimientosRes].some(r => r.status === 'fulfilled' && r.value.desdeCache);
+      if (fallo && productosRes.status === 'rejected' && movimientosRes.status === 'rejected') {
+        console.error('Error al cargar movimientos:', fallo.reason);
+        this.errorMsg = mensajeError(fallo.reason, 'No se pudo cargar la información');
+      } else if (fallo || usoCache) {
         this.errorMsg = this.storage.mensajeCache();
       }
-
-      this.productos = productosRes.datos;
-      this.movimientos = movimientosRes.datos;
-    } catch (err) {
-      console.error('Error al cargar movimientos:', err);
-      this.errorMsg = mensajeError(err, 'No se pudo cargar la información');
     } finally {
       this.cargando = false;
       this.cdr.detectChanges();
     }
+  }
+
+  /** Vista local: datos del servidor + ventas y entradas hechas sin conexión que aún no se envían. */
+  private refrescarLocal() {
+    this.productos = this.sync.aplicarAProductos(this.tiendaId, this.productosBase);
+    this.movimientos = [...this.sync.movimientosPendientes(this.tiendaId, this.productos), ...this.movimientosBase];
   }
 
   // ==================== CARRITO / VENTA ====================
@@ -190,13 +228,23 @@ export class MovimientosPage implements OnInit, OnDestroy {
     this.okMsg = '';
 
     try {
-      const venta = await this.api.registrarVenta(this.tiendaId,
-        this.carrito.map(i => ({ producto_id: i.producto_id, cantidad: i.cantidad })));
+      const total = this.totalCarrito;
+      const { encolado, resultado } = await this.sync.enviarOEncolar<RespuestaVenta>({
+        tipo: 'venta', tiendaId: this.tiendaId,
+        items: this.carrito.map(i => ({ producto_id: i.producto_id, cantidad: i.cantidad })),
+        descripcion: `Venta de ${this.unidadesCarrito} unidades ($${total.toFixed(2)})`,
+      });
 
-      this.okMsg = `Venta registrada: $${venta.total.toFixed(2)}`;
+      this.okMsg = encolado
+        ? `Venta de $${total.toFixed(2)}: ${GUARDADO_LOCAL}`
+        : `Venta registrada: $${resultado!.total.toFixed(2)}`;
       this.carrito = [];
       this.guardarCarrito();
-      await this.cargarTodo();
+      if (encolado) {
+        this.refrescarLocal();
+      } else {
+        await this.cargarTodo();
+      }
     } catch (err: any) {
       console.error('Error al registrar la venta:', err);
       this.errorMsg = mensajeError(err, 'No se pudo registrar la venta');
@@ -248,11 +296,19 @@ export class MovimientosPage implements OnInit, OnDestroy {
     this.guardandoEntrada = true;
 
     try {
-      await this.api.registrarEntrada(this.tiendaId, this.producto_id, this.cantidad);
+      const producto = this.productos.find(p => p.id === this.producto_id);
+      const { encolado } = await this.sync.enviarOEncolar({
+        tipo: 'entrada', tiendaId: this.tiendaId, productoId: this.producto_id, cantidad: this.cantidad,
+        descripcion: `Entrada de ${this.cantidad} × ${producto?.nombre ?? 'producto'}`,
+      });
 
-      this.okMsg = 'Entrada registrada';
+      this.okMsg = encolado ? `Entrada: ${GUARDADO_LOCAL}` : 'Entrada registrada';
       this.cantidad = null;
-      await this.cargarTodo();
+      if (encolado) {
+        this.refrescarLocal();
+      } else {
+        await this.cargarTodo();
+      }
     } catch (err: any) {
       console.error('Error al registrar entrada:', err);
       this.errorMsg = mensajeError(err, 'No se pudo registrar la entrada');
@@ -288,16 +344,26 @@ export class MovimientosPage implements OnInit, OnDestroy {
     this.errorMsg = '';
 
     try {
-      const nuevoId = await this.api.crearProducto(this.tiendaId, {
-        nombre: this.nuevoNombre,
-        codigo: this.nuevoCodigo,
-        costo: this.nuevoCosto ?? 0,
-        precio_venta: this.nuevoPrecio,
-        stock: this.nuevoStock,
+      const idTemporal = this.sync.idTemporal();
+      const { encolado, resultado } = await this.sync.enviarOEncolar<number>({
+        tipo: 'crearProducto', tiendaId: this.tiendaId, productoId: idTemporal, descripcion: `Crear "${this.nuevoNombre}"`,
+        producto: {
+          nombre: this.nuevoNombre,
+          codigo: this.nuevoCodigo,
+          costo: this.nuevoCosto ?? 0,
+          precio_venta: this.nuevoPrecio,
+          stock: this.nuevoStock,
+        },
       });
 
       this.mostrarAltaRapida = false;
-      await this.cargarTodo();
+      if (encolado) {
+        this.okMsg = `Producto nuevo: ${GUARDADO_LOCAL}`;
+        this.refrescarLocal();
+      } else {
+        await this.cargarTodo();
+      }
+      const nuevoId = encolado ? idTemporal : resultado!;
 
       const nuevo = this.productos.find(p => p.id === nuevoId);
       if (nuevo && this.modo === 'vender') {

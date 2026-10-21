@@ -287,6 +287,13 @@
     background: rgba(255, 184, 77, 0.12);
   }
 
+  // Cambio hecho sin conexión que aún no llega al servidor.
+  &.pendiente {
+    color: #1a1204;
+    background: #f59e0b;
+    text-transform: none;
+  }
+
   &.alerta {
     color: #ff5c7c;
     background: rgba(255, 92, 124, 0.12);

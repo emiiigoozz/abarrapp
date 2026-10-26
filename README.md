@@ -25,6 +25,7 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 - **Punto de venta:** carrito con varios productos, búsqueda, control de stock y venta en una sola transacción. El carrito se conserva si se cierra la app.
 - **Recepción de mercancía:** entradas de stock y alta rápida de productos nuevos.
 - **Escáner de códigos de barras:** con la cámara (ZXing) o con un lector USB/Bluetooth tipo teclado.
+- **Fotos de productos:** se toman con la cámara o se eligen de la galería (Capacitor Camera), se guardan en el servidor y se ven como miniatura en Productos y en el punto de venta. Un visor permite ampliarlas (tocar para acercar), cambiarlas o quitarlas. En pantallas anchas la lista de productos se acomoda en 2 o 3 columnas.
 - **Dashboard:**
   - ingresos, costos, ganancia y unidades vendidas;
   - curva de ganancias de los últimos 14 días (Chart.js);
@@ -194,7 +195,8 @@ La API responde con códigos HTTP correctos (201, 400, 404, 405, 409, 500) y usa
 1. Prende Apache y MySQL en el panel de XAMPP.
 2. Abre `http://localhost:8080/phpmyadmin`.
 3. **Instalación nueva:** importa `api-login/database.sql`. Crea la base `login_app`, todas las tablas y datos de prueba.
-4. **Si ya tenías una versión anterior:** ejecuta `api-login/migracion_v1_tiendas.sql`. Agrega `tienda_id` a los productos y los asigna a la tienda más antigua.
+4. **Si ya tenías una versión anterior:** ejecuta `api-login/migracion_v1_tiendas.sql` (agrega `tienda_id` a los productos y los asigna a la tienda más antigua) y luego `api-login/migracion_fotos.sql` (agrega la columna `foto`).
+5. Las fotos se guardan en `api-login/uploads/productos/`; Apache debe poder escribir en esa carpeta (en XAMPP ya puede).
 
 > Los archivos `db.sql`, `db_inventario.sql`, `db_tiendas.sql` y `alter_usuarios.sql` son de versiones anteriores y se conservan como historial.
 
@@ -267,6 +269,7 @@ App II/
         │   ├── api.service.ts     ← único acceso a la API REST (1 método por endpoint)
         │   ├── storage.service.ts ← persistencia + caché offline
         │   ├── sync.service.ts    ← cola de cambios offline y sincronización
+        │   ├── foto.service.ts    ← cámara y galería (Capacitor Camera)
         │   ├── network.service.ts ← detección de red + mensajeError()
         │   ├── hid-scanner.service.ts
         │   └── barcode-scanner/   ← escáner con cámara

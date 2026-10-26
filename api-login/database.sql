@@ -47,6 +47,8 @@ CREATE TABLE IF NOT EXISTS productos (
   nombre VARCHAR(150) NOT NULL,
   codigo VARCHAR(50) NULL,
   categoria VARCHAR(100) NULL,
+  -- Ruta de la foto del producto (p. ej. uploads/productos/3_12_1729890000.jpg)
+  foto VARCHAR(255) NULL,
   costo DECIMAL(10,2) NOT NULL DEFAULT 0,
   precio_venta DECIMAL(10,2) NOT NULL DEFAULT 0,
   stock INT NOT NULL DEFAULT 0,

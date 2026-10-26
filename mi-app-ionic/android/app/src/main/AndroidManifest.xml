@@ -42,4 +42,6 @@
     <!-- Escáner de códigos de barras -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-feature android:name="android.hardware.camera" android:required="false" />
+    <!-- Galería en Android 12 o anterior (en 13+ se usa el selector de fotos del sistema, sin permiso) -->
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 </manifest>

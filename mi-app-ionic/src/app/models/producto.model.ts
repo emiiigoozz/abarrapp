@@ -7,6 +7,8 @@ export interface Producto {
   /** Código de barras (EAN/UPC); opcional. */
   codigo: string | null;
   categoria: string | null;
+  /** URL completa de la foto del producto, o null si no tiene. */
+  foto: string | null;
   /** Lo que le cuesta el producto a la tienda. */
   costo: number;
   /** Precio al que se vende al cliente. */

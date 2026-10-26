@@ -24,6 +24,7 @@ En este documento registro para qué usé la IA en cada etapa del proyecto: qué
 | 10 | 2026-10-12 | Arquitectura cliente → API → BD | `ApiService` centralizado, modelos JSON, análisis de la arquitectura |
 | 11 | 2026-10-14 | Conexión con API REST | Loading visible en GET/DELETE, capturas de GET/POST/PUT/DELETE en el emulador |
 | 12 | 2026-10-20 | Información local y remota | Cola de sincronización offline, barra de estado, diagrama del proceso |
+| 13 | 2026-10-25 | Multimedia | Fotos de productos con cámara y galería, visor con zoom, lista responsiva |
 
 ---
 
@@ -190,6 +191,26 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 
 ---
 
+## Sesión 13 — Elemento multimedia: fotos de productos
+
+**Prompt:** la descripción de la entrega ("Agregar a la aplicación un elemento multimedia o una interacción gráfica relacionada con su proyecto": cámara, fotografías, galería o componentes visuales interactivos; funcionalidad integrada, interfaz responsiva, evidencia en emulador, código, video y registro del proceso con IA).
+
+**Propuesta de la IA:** fotos de productos, porque sirven al negocio: ayudan a reconocer el producto al cobrar y a revisar el inventario. Se descartó usar otra vez el escáner de códigos de barras, porque ya existía desde la sesión 5.
+
+**Qué hizo la IA:**
+- **Servidor:** columna `foto` en `productos` y endpoint `foto.php` (subir, reemplazar y quitar). Valida el contenido real de la imagen (`getimagesizefromstring`) y que pese menos de 3 MB, y solo acepta productos de la tienda indicada. Borrar un producto borra también su foto. Lo probó con 8 casos, entre ellos un texto disfrazado de imagen (415) y un producto de otra tienda (404).
+- **App:**
+  - `FotoService` con Capacitor Camera (cámara o galería; la imagen se reduce a 900 px y calidad 70 %).
+  - Métodos `subirFoto` y `quitarFoto` en `ApiService`.
+  - Campo de foto en el formulario, miniaturas en Productos y en el punto de venta, y un visor con zoom.
+  - Lista responsiva (1, 2 o 3 columnas según el ancho).
+  - Sin conexión, los botones de foto se desactivan con un aviso.
+- **Prueba en el emulador:** galería (selector de fotos de Android), cámara (con el permiso que pide Android), zoom, vista horizontal y modo avión.
+
+**Problemas encontrados en la prueba:** las imágenes no se veían porque la app corría en `https://localhost` y Android bloqueaba las fotos servidas por `http` (problemas 15 y 16 en la tabla de abajo).
+
+---
+
 ## Código aceptado, modificado o descartado
 
 ### Aceptado sin cambios
@@ -234,6 +255,8 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 | 12 | Un producto creado en Productos no aparecía al volver a Movimientos | Ionic reutiliza la pantalla al volver a ella y `ngOnInit` no se repite | Recargar en `ionViewWillEnter` al reingresar | Sí (detectado en la prueba del emulador) |
 | 13 | Los avisos mostraban `<br>` literal | Ionic 9 no interpreta HTML en los mensajes de alerta (seguridad) | Saltos de línea `\n` con `white-space: pre-line` | Sí |
 | 14 | Android cerraba la app sola en el emulador | El emulador tenía 2 GB de RAM y Android 17 con Play Store no cabía | Subir la RAM del emulador a 3 GB | Sí (diagnóstico con `lowmemorykiller` en el log) |
+| 15 | Las fotos se subían pero no se veían | La app corría en `https://localhost` y el WebView bloqueaba las imágenes `http` del servidor por "contenido mixto" (las peticiones de datos sí pasaban) | `server.androidScheme: 'http'` en `capacitor.config.ts` | Sí (detectado con el log de la consola del WebView) |
+| 16 | Sin conexión, los botones de foto seguían activos | La pantalla leía el estado de la red con un getter y, al ser la app zoneless, no se redibujaba al cambiar | Suscribirse a `online$` y redibujar | Sí (detectado en la captura del modo avión) |
 
 ---
 

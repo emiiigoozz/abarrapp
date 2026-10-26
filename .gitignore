@@ -3,3 +3,6 @@
 # Archivos para entregar (APK, documentos): no se versionan
 entregas/
 *.apk
+
+# Fotos que suben los usuarios (se generan en el servidor)
+api-login/uploads/

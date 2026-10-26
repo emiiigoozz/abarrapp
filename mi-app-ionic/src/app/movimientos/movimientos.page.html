@@ -109,6 +109,7 @@
            [class.par]="i % 2 === 0"
            [class.sin-stock]="p.stock <= 0"
            (click)="p.stock > 0 && agregarAlCarrito(p)">
+        <img *ngIf="p.foto" class="producto-row-foto" [src]="p.foto" alt="" loading="lazy" (error)="p.foto = null">
         <span class="producto-row-nombre">{{ p.nombre }}</span>
         <span class="producto-row-precio">${{ p.precio_venta.toFixed(2) }}</span>
         <span class="producto-row-stock" [class.bajo]="p.stock <= 5">Stock: {{ p.stock }}</span>

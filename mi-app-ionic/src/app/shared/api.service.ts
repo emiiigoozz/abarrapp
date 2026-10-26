@@ -79,6 +79,7 @@ export class ApiService {
       ...p,
       id: Number(p.id),
       tienda_id: Number(p.tienda_id),
+      foto: this.urlFoto(p.foto),
       costo: Number(p.costo),
       precio_venta: Number(p.precio_venta),
       stock: Number(p.stock),
@@ -97,6 +98,24 @@ export class ApiService {
 
   async eliminarProducto(tiendaId: number, id: number): Promise<void> {
     await this.http.delete('/productos.php', { params: { id, tienda_id: tiendaId } });
+  }
+
+  // ==================== Fotos de productos ====================
+
+  /** Sube (o reemplaza) la foto de un producto. Recibe la imagen en base64 y devuelve su URL. */
+  async subirFoto(tiendaId: number, productoId: number, base64: string): Promise<string> {
+    const { data } = await this.http.post<RespuestaApi & { foto: string }>('/foto.php',
+      { tienda_id: tiendaId, producto_id: productoId, imagen: base64 }, { timeout: 30000 });
+    return this.urlFoto(data.foto)!;
+  }
+
+  async quitarFoto(tiendaId: number, productoId: number): Promise<void> {
+    await this.http.delete('/foto.php', { params: { producto_id: productoId, tienda_id: tiendaId } });
+  }
+
+  /** La API guarda la ruta relativa (uploads/productos/…); la app usa la URL completa. */
+  private urlFoto(ruta: string | null | undefined): string | null {
+    return ruta ? `${environment.apiUrl}/${ruta}` : null;
   }
 
   // ==================== Movimientos y ventas ====================

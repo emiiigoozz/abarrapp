@@ -357,3 +357,12 @@
   border: 1px solid var(--app-surface-border);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
 }
+
+// Foto del producto en la lista del punto de venta: ayuda a reconocerlo al cobrar.
+.producto-row-foto {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+}

@@ -61,6 +61,31 @@
       </div>
     </div>
 
+    <!-- Foto del producto: cámara o galería -->
+    <div class="foto-campo">
+      <div class="foto-preview" [class.con-foto]="vistaPrevia">
+        <img *ngIf="vistaPrevia; else sinFoto" [src]="vistaPrevia" alt="Vista previa de la foto del producto">
+        <ng-template #sinFoto>
+          <ion-icon name="image-outline"></ion-icon>
+          <span>Sin foto</span>
+        </ng-template>
+      </div>
+      <div class="foto-acciones">
+        <ion-button size="small" fill="outline" shape="round" [disabled]="!online" (click)="fotoFormulario('camara')">
+          <ion-icon slot="start" name="camera-outline"></ion-icon>
+          Cámara
+        </ion-button>
+        <ion-button size="small" fill="outline" shape="round" [disabled]="!online" (click)="fotoFormulario('galeria')">
+          <ion-icon slot="start" name="images-outline"></ion-icon>
+          Galería
+        </ion-button>
+        <ion-button *ngIf="vistaPrevia" size="small" fill="clear" color="danger" (click)="quitarFotoFormulario()">
+          Quitar
+        </ion-button>
+        <span class="foto-ayuda" *ngIf="!online">Las fotos se guardan en el servidor: necesitan conexión.</span>
+      </div>
+    </div>
+
     <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
     <p class="ok-msg" *ngIf="okMsg">{{ okMsg }}</p>
 
@@ -87,9 +112,15 @@
       Todavía no hay productos registrados.
     </div>
 
+    <!-- En pantallas anchas (tablet u horizontal) la lista se acomoda en columnas -->
+    <div class="productos-grid">
     <div class="item-card" *ngFor="let p of productos">
       <div class="item-info">
-        <div class="item-avatar">{{ p.nombre.charAt(0) }}</div>
+        <button type="button" class="item-avatar foto-miniatura" (click)="abrirVisor(p)"
+                [attr.aria-label]="'Ver foto de ' + p.nombre">
+          <img *ngIf="p.foto; else inicial" [src]="p.foto" alt="" loading="lazy" (error)="p.foto = null">
+          <ng-template #inicial>{{ p.nombre.charAt(0) }}</ng-template>
+        </button>
         <div class="item-text">
           <span class="item-name">{{ p.nombre }}</span>
           <span class="item-sub">
@@ -117,6 +148,7 @@
         </ion-button>
       </div>
     </div>
+    </div>
   </div>
 
   <app-barcode-scanner
@@ -124,5 +156,53 @@
     (scanned)="onCodigoEscaneado($event)"
     (closed)="mostrarScanner = false">
   </app-barcode-scanner>
+
+  <!-- Visor de la foto: ampliar, cambiar o quitar -->
+  <ion-modal [isOpen]="!!visor" (didDismiss)="cerrarVisor()" class="visor-modal">
+    <ng-template>
+      <ion-header>
+        <ion-toolbar>
+          <ion-title>{{ visor?.nombre }}</ion-title>
+          <ion-buttons slot="end">
+            <ion-button (click)="cerrarVisor()" aria-label="Cerrar">
+              <ion-icon slot="icon-only" name="close-outline"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+      <ion-content class="visor-content">
+        <div class="visor-imagen" [class.zoom]="zoom" (click)="visor?.foto && (zoom = !zoom)">
+          <img *ngIf="visor?.foto" [src]="visor.foto" [alt]="'Foto de ' + visor.nombre">
+          <div class="visor-vacio" *ngIf="!visor?.foto">
+            <ion-icon name="image-outline"></ion-icon>
+            <p>Este producto todavía no tiene foto</p>
+          </div>
+          <div class="visor-cargando" *ngIf="subiendoFoto">
+            <ion-spinner name="crescent"></ion-spinner>
+            <span>Guardando foto…</span>
+          </div>
+        </div>
+        <p class="visor-pista" *ngIf="visor?.foto">Toca la imagen para {{ zoom ? 'alejar' : 'acercar' }}</p>
+
+        <div class="visor-datos" *ngIf="visor">
+          <span class="badge activo">${{ visor.precio_venta.toFixed(2) }}</span>
+          <span class="badge" [class.alerta]="visor.stock <= 5">Stock: {{ visor.stock }}</span>
+          <span class="badge" *ngIf="visor.categoria">{{ visor.categoria }}</span>
+        </div>
+
+        <div class="visor-acciones">
+          <ion-button expand="block" shape="round" [disabled]="!online || subiendoFoto || (visor?.id ?? 0) < 0" (click)="cambiarFotoVisor()">
+            <ion-icon slot="start" name="camera-outline"></ion-icon>
+            {{ visor?.foto ? 'Cambiar foto' : 'Agregar foto' }}
+          </ion-button>
+          <ion-button *ngIf="visor?.foto" expand="block" fill="clear" color="danger" [disabled]="!online || subiendoFoto" (click)="quitarFotoVisor()">
+            Quitar foto
+          </ion-button>
+          <p class="foto-ayuda" *ngIf="!online">Sin conexión: las fotos se pueden cambiar cuando vuelva Internet.</p>
+          <p class="foto-ayuda" *ngIf="online && (visor?.id ?? 0) < 0">Este producto aún no llega al servidor; agrega la foto cuando se sincronice.</p>
+        </div>
+      </ion-content>
+    </ng-template>
+  </ion-modal>
 
 </ion-content>

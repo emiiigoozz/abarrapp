@@ -1,1 +1,197 @@
 @import '../../theme/admin-panel';
+
+// ==================== Fotos de productos ====================
+
+// Miniatura en la tarjeta: es un botón (abre el visor) con la foto o la inicial.
+.foto-miniatura {
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
+  padding: 0;
+  border: none;
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+}
+
+.foto-campo {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 16px;
+  flex-wrap: wrap;
+}
+
+.foto-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.03);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  color: var(--app-muted);
+  font-size: 12px;
+  overflow: hidden;
+  flex-shrink: 0;
+
+  ion-icon {
+    font-size: 28px;
+  }
+
+  &.con-foto {
+    border-style: solid;
+    border-color: var(--app-glow-cyan);
+  }
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+}
+
+.foto-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.foto-ayuda {
+  width: 100%;
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--app-muted);
+}
+
+// Lista responsiva: 1 columna en teléfono, 2 en tablet u horizontal, 3 en pantallas grandes.
+.productos-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+
+  .item-card {
+    margin-bottom: 0;
+  }
+
+  @media (min-width: 720px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 1100px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+// ==================== Visor ====================
+
+.visor-modal {
+  --width: min(100%, 640px);
+  --height: 100%;
+  --border-radius: 0;
+
+  @media (min-width: 720px) {
+    --height: min(92%, 860px);
+    --border-radius: 20px;
+  }
+}
+
+.visor-content {
+  --background: #05060c;
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 16px;
+}
+
+// Contenedor de la imagen: al tocarla se duplica su tamaño y se puede recorrer deslizando.
+.visor-imagen {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    cursor: zoom-in;
+    transition: transform 0.25s ease;
+  }
+
+  &.zoom {
+    overflow: auto;
+    display: block;
+
+    img {
+      width: 200%;
+      height: 200%;
+      max-width: none;
+      cursor: zoom-out;
+    }
+  }
+}
+
+.visor-vacio {
+  text-align: center;
+  color: var(--app-muted);
+
+  ion-icon {
+    font-size: 64px;
+  }
+}
+
+.visor-cargando {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: rgba(5, 6, 12, 0.75);
+  color: #fff;
+  font-weight: 600;
+}
+
+.visor-pista {
+  text-align: center;
+  font-size: 12px;
+  color: var(--app-muted);
+  margin: 8px 0 0;
+}
+
+.visor-datos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 16px 0;
+}
+
+.visor-acciones {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-width: 420px;
+  margin: 0 auto 24px;
+}

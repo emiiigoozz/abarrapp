@@ -102,8 +102,17 @@ if ($method === 'DELETE') {
     $tiendaId = requerirTiendaId();
     exigirProductoDeTienda($pdo, $id, $tiendaId);
 
+    $foto = $pdo->prepare('SELECT foto FROM productos WHERE id = ?');
+    $foto->execute([$id]);
+    $foto = $foto->fetchColumn();
+
     $delete = $pdo->prepare('DELETE FROM productos WHERE id = ? AND tienda_id = ?');
     $delete->execute([$id, $tiendaId]);
+
+    // La foto del producto ya no se usa: se borra el archivo.
+    if ($foto && str_starts_with($foto, 'uploads/productos/') && is_file(__DIR__ . '/' . $foto)) {
+        unlink(__DIR__ . '/' . $foto);
+    }
 
     echo json_encode(['success' => true, 'message' => 'Producto eliminado']);
     exit;

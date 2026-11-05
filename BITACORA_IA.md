@@ -25,6 +25,7 @@ En este documento registro para qué usé la IA en cada etapa del proyecto: qué
 | 11 | 2026-10-14 | Conexión con API REST | Loading visible en GET/DELETE, capturas de GET/POST/PUT/DELETE en el emulador |
 | 12 | 2026-10-20 | Información local y remota | Cola de sincronización offline, barra de estado, diagrama del proceso |
 | 13 | 2026-10-25 | Multimedia | Fotos de productos con cámara y galería, visor con zoom, lista responsiva |
+| 14 | 2026-11-05 | Versión 2.0 | Revisión de requisitos, documentación de endpoints (docs/API.md), versión 2.0.0, APK |
 
 ---
 
@@ -208,6 +209,19 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 - **Prueba en el emulador:** galería (selector de fotos de Android), cámara (con el permiso que pide Android), zoom, vista horizontal y modo avión.
 
 **Problemas encontrados en la prueba:** las imágenes no se veían porque la app corría en `https://localhost` y Android bloqueaba las fotos servidas por `http` (problemas 15 y 16 en la tabla de abajo).
+
+---
+
+## Sesión 14 — Versión 2.0
+
+**Prompt:** la lista de la entrega v2.0 (todo lo de la Unidad I, arquitectura cliente-servidor, API REST, CRUD remoto, persistencia local, sincronización, manejo de errores de red, elemento multimedia, interfaz funcional, repositorio, APK, documentación de endpoints y bitácora de IA), preguntando si ya estaba todo.
+
+**Qué revisó la IA:** comparó cada punto con el repositorio. La funcionalidad ya estaba completa, pero encontró 3 faltantes de entrega:
+- todo seguía marcado como v1.0 (README, package.json, versión de Android) y no había etiqueta v2.0.0;
+- el APK guardado era el v1.0.0 (sin sincronización ni fotos);
+- la documentación de endpoints solo existía dentro de un documento Word y no incluía `foto.php`.
+
+**Qué hizo:** escribió `docs/API.md` con los 22 endpoints, usando respuestas reales de la API; actualizó el README con la tabla de requisitos de la v2.0; cambió la versión a 2.0.0 (versionCode 2); generó el APK y la etiqueta `v2.0.0`.
 
 ---
 

@@ -1,4 +1,4 @@
-# AbarrApp v1.0 — Inventario y punto de venta para tiendas de abarrotes
+# AbarrApp v2.0 — Inventario y punto de venta para tiendas de abarrotes
 
 AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que permite a los dueños de tiendas de abarrotes controlar su inventario, vender con un carrito tipo punto de venta y ver cuánto están ganando en realidad.
 
@@ -6,10 +6,11 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 
 | | |
 |---|---|
-| Versión | 1.0.0 |
+| Versión | 2.0.0 |
 | Plataforma probada | Android 17 (emulador Pixel 9) y navegador |
 | Video demostrativo | _(pega aquí el enlace al video)_ |
 | Bitácora de IA | [BITACORA_IA.md](BITACORA_IA.md) |
+| Documentación de la API | [docs/API.md](docs/API.md) |
 
 ---
 
@@ -35,20 +36,29 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 - **Gestión de usuarios del sistema:** CRUD de usuarios.
 - **Funciona sin conexión y sincroniza:** sin red se puede seguir vendiendo, recibiendo mercancía y editando productos; los cambios se guardan en el teléfono y se envían solos al volver la conexión. Una barra inferior indica siempre el estado (en línea, sin conexión, sincronizando, pendientes o con errores).
 
-## Cómo cumple cada requisito de la v1.0
+## Novedades de la versión 2.0
+
+| Versión | Qué se agregó |
+|---|---|
+| 1.0.0 | Proyecto Ionic, navegación, CRUD, inventario por tienda, persistencia local, manejo de errores, modo offline de solo lectura |
+| 2.0.0 | Servicio Angular único para la API (`ApiService`), loading en todas las peticiones, **sincronización offline** con cola de cambios y barra de estado, **fotos de productos** (cámara y galería), documentación de endpoints |
+
+## Cómo cumple cada requisito de la v2.0
 
 | Requisito | Dónde está |
 |---|---|
-| Proyecto Ionic funcional | `mi-app-ionic/` (Ionic 9, Angular 22, Capacitor 8) |
-| Navegación | [Rutas y navegación](#navegación) — 9 páginas con *lazy loading* |
-| Modelo de datos | [Modelo de datos](#modelo-de-datos) — tablas MySQL + interfaces TypeScript en `src/app/models/` |
-| CRUD | Productos (`/productos`), usuarios (`/usuarios`), tiendas y miembros |
-| Persistencia | [Persistencia y modo offline](#persistencia-y-modo-offline) — Capacitor Preferences |
-| Manejo de errores | [Manejo de errores](#manejo-de-errores) — `mensajeError()` en `shared/network.service.ts` |
-| Operación offline básica | Detección de red + caché local + cola de sincronización + barra de estado |
-| Repositorio Git | Este repositorio |
-| APK | [Compilar el APK](#4-compilar-y-ejecutar-en-android) |
-| README | Este archivo |
+| Todo lo de la Unidad I | Proyecto Ionic, [navegación](#navegación), [modelo de datos](#modelo-de-datos), CRUD, persistencia, README y bitácora (v1.0, etiqueta `v1.0.0`) |
+| Arquitectura cliente-servidor | [Arquitectura](#arquitectura): app Ionic → API REST en PHP → MySQL |
+| API REST | `api-login/`: 10 endpoints, 22 operaciones con GET, POST, PUT y DELETE |
+| CRUD remoto | Productos, usuarios, tiendas y miembros, todo contra la API (`ApiService`) |
+| Persistencia local | [Persistencia y modo offline](#persistencia-y-modo-offline): Capacitor Preferences (sesión, caché, carrito y cola) |
+| Sincronización | [Sincronización](#sincronización-syncservice): cola de cambios offline que se envía sola al volver la red |
+| Manejo de errores de red | [Manejo de errores](#manejo-de-errores): `mensajeError()` y barra de estado |
+| Elemento multimedia | Fotos de productos con cámara y galería, y visor con zoom |
+| Interfaz funcional | 9 pantallas Ionic; lista responsiva de 1 a 3 columnas |
+| Repositorio | Este repositorio, etiqueta `v2.0.0` |
+| APK / demostración | [Compilar el APK](#4-compilar-y-ejecutar-en-android); APK de depuración v2.0.0 |
+| Documentación de endpoints | [docs/API.md](docs/API.md) |
 | Bitácora de IA | [BITACORA_IA.md](BITACORA_IA.md) |
 
 ## Tecnologías
@@ -251,6 +261,7 @@ Estas credenciales las crea `database.sql`.
 App II/
 ├── README.md
 ├── BITACORA_IA.md                 ← bitácora de desarrollo asistido por IA
+├── docs/API.md                    ← documentación de endpoints
 ├── api-login/                     ← API REST en PHP (se copia a htdocs)
 │   ├── config.php                 ← conexión PDO + requerirTiendaId()
 │   ├── login.php, register.php
@@ -258,7 +269,9 @@ App II/
 │   ├── productos.php              ← CRUD de productos por tienda
 │   ├── movimientos.php, venta.php ← entradas y ventas (con transacción)
 │   ├── dashboard.php
-│   ├── database.sql               ← esquema completo v1.0
+│   ├── foto.php                   ← fotos de productos
+│   ├── database.sql               ← esquema completo v2.0
+│   ├── migracion_fotos.sql        ← agrega productos.foto a una base v1.0
 │   └── migracion_v1_tiendas.sql
 └── mi-app-ionic/
     ├── android/                   ← proyecto nativo Android (Capacitor)

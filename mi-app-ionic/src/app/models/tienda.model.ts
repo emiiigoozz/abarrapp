@@ -8,6 +8,9 @@ export interface Tienda {
   /** Código que se comparte para que otros usuarios pidan unirse. */
   codigo_invitacion: string;
   dueno_id: number;
+  /** Ubicación de la tienda; null si el admin aún no la registra. */
+  latitud: number | null;
+  longitud: number | null;
   rol: RolTienda;
   estado: EstadoMiembro;
 }

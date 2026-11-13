@@ -41,7 +41,13 @@ export class ApiService {
 
   async listarTiendas(usuarioId: number): Promise<Tienda[]> {
     const { data } = await this.http.get<RespuestaApi<any[]>>('/tiendas.php', { params: { usuario_id: usuarioId } });
-    return (data.data ?? []).map(t => ({ ...t, id: Number(t.id), dueno_id: Number(t.dueno_id) }));
+    return (data.data ?? []).map(t => ({
+      ...t,
+      id: Number(t.id),
+      dueno_id: Number(t.dueno_id),
+      latitud: t.latitud === null ? null : Number(t.latitud),
+      longitud: t.longitud === null ? null : Number(t.longitud),
+    }));
   }
 
   async crearTienda(usuarioId: number, nombre: string): Promise<RespuestaApi> {
@@ -54,6 +60,11 @@ export class ApiService {
       accion: 'unirse', usuario_id: usuarioId, codigo_invitacion: codigoInvitacion,
     });
     return data;
+  }
+
+  /** Guarda la ubicación de la tienda (solo admin). */
+  async guardarUbicacionTienda(usuarioId: number, tiendaId: number, latitud: number, longitud: number): Promise<void> {
+    await this.http.post('/tiendas.php', { accion: 'ubicacion', usuario_id: usuarioId, tienda_id: tiendaId, latitud, longitud });
   }
 
   async listarMiembros(tiendaId: number, usuarioId: number): Promise<Miembro[]> {

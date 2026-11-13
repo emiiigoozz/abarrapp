@@ -78,6 +78,7 @@ Todos los endpoints responden `Access-Control-Allow-Origin: *` y atienden la pet
 | 3 | GET | `/tiendas.php?usuario_id=` | Tiendas del usuario | `listarTiendas()` |
 | 4 | POST | `/tiendas.php` (`accion: "crear"`) | Crear tienda | `crearTienda()` |
 | 5 | POST | `/tiendas.php` (`accion: "unirse"`) | Pedir unirse con código | `unirseATienda()` |
+| 5b | POST | `/tiendas.php` (`accion: "ubicacion"`) | Guardar la ubicación GPS de la tienda (admin) | `guardarUbicacionTienda()` |
 | 6 | GET | `/miembros.php?tienda_id=&usuario_id=` | Miembros de la tienda (admin) | `listarMiembros()` |
 | 7 | PUT | `/miembros.php?id=` | Aceptar miembro o cambiar su rol (admin) | `actualizarMiembro()` |
 | 8 | DELETE | `/miembros.php?id=&usuario_id=` | Quitar miembro (admin) | `eliminarMiembro()` |
@@ -96,7 +97,7 @@ Todos los endpoints responden `Access-Control-Allow-Origin: *` y atienden la pet
 | 21 | PUT | `/usuarios.php?id=` | Editar usuario | `actualizarUsuario()` |
 | 22 | DELETE | `/usuarios.php?id=` | Borrar usuario | `eliminarUsuario()` |
 
-**Total:** 10 archivos PHP y 22 operaciones.
+**Total:** 10 archivos PHP y 23 operaciones.
 
 ---
 
@@ -146,8 +147,10 @@ Devuelve las tiendas a las que pertenece el usuario, con su rol y estado en cada
 ```json
 { "success": true, "data": [
   { "id": "3", "nombre": "Abarrotes Demo", "codigo_invitacion": "4AMAEU", "dueno_id": "7",
-    "rol": "admin", "estado": "aceptado" } ] }
+    "latitud": "24.0277202", "longitud": "-104.6531759", "rol": "admin", "estado": "aceptado" } ] }
 ```
+
+`latitud` y `longitud` son `null` si el admin todavía no registra la ubicación de la tienda.
 
 ### `POST /tiendas.php` — crear tienda
 
@@ -166,6 +169,16 @@ Devuelve las tiendas a las que pertenece el usuario, con su rol y estado en cada
 **201** `"Solicitud enviada a \"…\". Un administrador debe aprobarte."`. Queda como `lector` en estado `pendiente`.
 
 **Errores:** 404 `"No existe ninguna tienda con ese código"` · 409 si ya es miembro o ya lo pidió.
+
+### `POST /tiendas.php` — guardar la ubicación de la tienda
+
+Solo el admin de la tienda. La app envía la ubicación GPS del teléfono cuando el admin está en el local.
+
+```json
+{ "accion": "ubicacion", "usuario_id": 7, "tienda_id": 3, "latitud": 24.0277202, "longitud": -104.6531759 }
+```
+
+**200** `"Ubicación de la tienda guardada"` · **Errores:** 400 `"Ubicación inválida"` (no numérica, latitud fuera de −90…90 o longitud fuera de −180…180) · 403 `"Solo un administrador puede cambiar la ubicación de la tienda"`.
 
 ### `GET /miembros.php?tienda_id=3&usuario_id=7`
 

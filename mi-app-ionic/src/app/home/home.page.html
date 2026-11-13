@@ -15,6 +15,7 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="home-content">
+  <div class="home-wrap">
   <div class="welcome-card">
     <div class="brand-mark">
       <ion-icon name="flash-outline"></ion-icon>
@@ -46,5 +47,65 @@
       <ion-icon slot="start" name="settings-outline"></ion-icon>
       Usuarios del sistema
     </ion-button>
+  </div>
+
+  <!-- Geolocalización: ¿estoy en la tienda? -->
+  <section class="ubicacion-card" aria-labelledby="titulo-ubicacion">
+    <div class="ubicacion-header">
+      <ion-icon name="location-outline"></ion-icon>
+      <h2 id="titulo-ubicacion">Ubicación</h2>
+    </div>
+    <p class="ubicacion-ayuda" *ngIf="!ubicacion && !errorUbicacion">
+      Compara tu ubicación con la de la tienda para saber si estás en el local.
+      La app te pedirá permiso para usar el GPS.
+    </p>
+
+    <ion-button expand="block" shape="round" class="nav-btn" [disabled]="buscandoUbicacion" (click)="obtenerUbicacion()">
+      <ion-spinner *ngIf="buscandoUbicacion" name="crescent"></ion-spinner>
+      <ng-container *ngIf="!buscandoUbicacion">
+        <ion-icon slot="start" name="locate-outline"></ion-icon>
+        {{ ubicacion ? 'Actualizar mi ubicación' : 'Obtener mi ubicación' }}
+      </ng-container>
+    </ion-button>
+
+    <div class="ubicacion-error" *ngIf="errorUbicacion" role="alert">
+      <ion-icon [name]="tipoErrorUbicacion === 'denegado' ? 'lock-closed-outline' : 'alert-circle-outline'"></ion-icon>
+      <span>{{ errorUbicacion }}</span>
+    </div>
+
+    <div class="coords" *ngIf="ubicacion">
+      <div class="coord"><span class="coord-label">Latitud</span><span class="coord-valor">{{ ubicacion.latitud.toFixed(6) }}</span></div>
+      <div class="coord"><span class="coord-label">Longitud</span><span class="coord-valor">{{ ubicacion.longitud.toFixed(6) }}</span></div>
+      <div class="coord"><span class="coord-label">Precisión</span><span class="coord-valor">± {{ ubicacion.precision | number:'1.0-0' }} m</span></div>
+    </div>
+
+    <div class="distancia" *ngIf="ubicacion && tieneUbicacionTienda" [class.dentro]="enTienda">
+      <ion-icon [name]="enTienda ? 'checkmark-circle' : 'navigate-circle-outline'"></ion-icon>
+      <div>
+        <strong>{{ enTienda ? 'Estás en la tienda' : 'Estás fuera de la tienda' }}</strong>
+        <span>A {{ distanciaTexto }} de {{ tiendaNombre }} · radio de {{ radioTienda }} m</span>
+      </div>
+    </div>
+
+    <p class="ubicacion-ayuda" *ngIf="ubicacion && !tieneUbicacionTienda">
+      La tienda todavía no tiene ubicación registrada{{ esAdmin ? '. Si estás en el local, guárdala:' : '; pídele al administrador que la registre.' }}
+    </p>
+
+    <div class="ubicacion-acciones">
+      <ion-button *ngIf="esAdmin && ubicacion" size="small" fill="outline" shape="round" [disabled]="guardandoUbicacion" (click)="guardarComoUbicacionTienda()">
+        <ion-icon slot="start" name="storefront-outline"></ion-icon>
+        {{ tieneUbicacionTienda ? 'Actualizar ubicación de la tienda' : 'Guardar como ubicación de la tienda' }}
+      </ion-button>
+      <ion-button *ngIf="tieneUbicacionTienda" size="small" fill="clear" (click)="abrirMapa()">
+        <ion-icon slot="start" name="map-outline"></ion-icon>
+        Ver tienda en el mapa
+      </ion-button>
+    </div>
+
+    <p class="ok-msg" *ngIf="okUbicacion">{{ okUbicacion }}</p>
+    <p class="tienda-coords" *ngIf="tieneUbicacionTienda">
+      Tienda: {{ tienda!.latitud!.toFixed(6) }}, {{ tienda!.longitud!.toFixed(6) }}
+    </p>
+  </section>
   </div>
 </ion-content>

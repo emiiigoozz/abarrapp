@@ -38,7 +38,7 @@ if ($method === 'GET') {
     }
 
     $stmt = $pdo->prepare(
-        'SELECT t.id, t.nombre, t.codigo_invitacion, t.dueno_id, tm.rol, tm.estado
+        'SELECT t.id, t.nombre, t.codigo_invitacion, t.dueno_id, t.latitud, t.longitud, tm.rol, tm.estado
          FROM tienda_miembros tm
          JOIN tiendas t ON t.id = tm.tienda_id
          WHERE tm.usuario_id = ?
@@ -132,6 +132,35 @@ if ($method === 'POST') {
 
         http_response_code(201);
         echo json_encode(['success' => true, 'message' => "Solicitud enviada a \"{$tienda['nombre']}\". Un administrador debe aprobarte."]);
+        exit;
+    }
+
+    // Guardar la ubicación de la tienda: { accion: "ubicacion", usuario_id, tienda_id, latitud, longitud }
+    if ($accion === 'ubicacion') {
+        $tienda_id = (int) ($body['tienda_id'] ?? 0);
+        $latitud = $body['latitud'] ?? null;
+        $longitud = $body['longitud'] ?? null;
+
+        if ($tienda_id <= 0 || !is_numeric($latitud) || !is_numeric($longitud)
+            || $latitud < -90 || $latitud > 90 || $longitud < -180 || $longitud > 180) {
+            http_response_code(400);
+            echo json_encode(['success' => false, 'message' => 'Ubicación inválida']);
+            exit;
+        }
+
+        $admin = $pdo->prepare(
+            "SELECT 1 FROM tienda_miembros WHERE tienda_id = ? AND usuario_id = ? AND rol = 'admin' AND estado = 'aceptado'"
+        );
+        $admin->execute([$tienda_id, $usuario_id]);
+        if (!$admin->fetchColumn()) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'message' => 'Solo un administrador puede cambiar la ubicación de la tienda']);
+            exit;
+        }
+
+        $pdo->prepare('UPDATE tiendas SET latitud = ?, longitud = ? WHERE id = ?')
+            ->execute([round((float) $latitud, 7), round((float) $longitud, 7), $tienda_id]);
+        echo json_encode(['success' => true, 'message' => 'Ubicación de la tienda guardada']);
         exit;
     }
 

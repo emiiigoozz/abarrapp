@@ -61,3 +61,170 @@
     --background: transparent;
   }
 }
+
+// ==================== Geolocalización ====================
+
+// Teléfono: tarjetas una debajo de otra. Pantalla ancha: lado a lado.
+.home-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 0 24px;
+
+  @media (min-width: 820px) {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: center;
+  }
+}
+
+.ubicacion-card {
+  width: 100%;
+  max-width: 360px;
+  padding: 24px 22px;
+  border-radius: 24px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-surface-border);
+  backdrop-filter: blur(20px);
+}
+
+.ubicacion-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+
+  ion-icon {
+    font-size: 22px;
+    color: var(--app-glow-cyan);
+  }
+
+  h2 {
+    font-family: var(--font-display);
+    font-size: 17px;
+    margin: 0;
+  }
+}
+
+.ubicacion-ayuda {
+  color: var(--app-muted);
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+
+.ubicacion-error {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(255, 92, 124, 0.1);
+  border: 1px solid rgba(255, 92, 124, 0.35);
+  color: #ffb3c1;
+  font-size: 13px;
+
+  ion-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    color: #ff5c7c;
+  }
+}
+
+// Latitud y longitud lado a lado; la precisión ocupa la fila completa.
+.coords {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.coord {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 8px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  text-align: center;
+}
+
+.coord-label {
+  font-size: 11px;
+  color: var(--app-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.coord-valor {
+  font-family: var(--font-display);
+  font-size: 14px;
+  white-space: nowrap;
+}
+
+.coord:last-child {
+  grid-column: 1 / -1;
+}
+
+.distancia {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-top: 14px;
+  padding: 14px;
+  border-radius: 16px;
+  background: rgba(255, 184, 77, 0.1);
+  border: 1px solid rgba(255, 184, 77, 0.35);
+
+  ion-icon {
+    font-size: 34px;
+    color: #ffb84d;
+    flex-shrink: 0;
+  }
+
+  div {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  strong {
+    font-size: 15px;
+  }
+
+  span {
+    font-size: 12.5px;
+    color: var(--app-muted);
+  }
+
+  &.dentro {
+    background: rgba(45, 212, 167, 0.1);
+    border-color: rgba(45, 212, 167, 0.4);
+
+    ion-icon {
+      color: #2dd4a7;
+    }
+  }
+}
+
+.ubicacion-acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.tienda-coords {
+  margin: 10px 0 0;
+  font-size: 11.5px;
+  color: var(--app-muted);
+}
+
+.ok-msg {
+  margin: 10px 0 0;
+  font-size: 12.5px;
+  color: #2dd4a7;
+}

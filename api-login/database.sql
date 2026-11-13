@@ -23,6 +23,9 @@ CREATE TABLE IF NOT EXISTS tiendas (
   nombre VARCHAR(150) NOT NULL,
   codigo_invitacion VARCHAR(10) NOT NULL UNIQUE,
   dueno_id INT NOT NULL,
+  -- Ubicación de la tienda (la registra el admin desde la app con el GPS)
+  latitud DECIMAL(10,7) NULL,
+  longitud DECIMAL(10,7) NULL,
   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   FOREIGN KEY (dueno_id) REFERENCES usuarios(id)
 );

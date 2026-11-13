@@ -26,6 +26,7 @@ En este documento registro para qué usé la IA en cada etapa del proyecto: qué
 | 12 | 2026-10-20 | Información local y remota | Cola de sincronización offline, barra de estado, diagrama del proceso |
 | 13 | 2026-10-25 | Multimedia | Fotos de productos con cámara y galería, visor con zoom, lista responsiva |
 | 14 | 2026-11-05 | Versión 2.0 | Revisión de requisitos, documentación de endpoints (docs/API.md), versión 2.0.0, APK |
+| 15 | 2026-11-13 | Geolocalización | Ubicación de la tienda, distancia y "estás en la tienda", manejo de permisos y errores |
 
 ---
 
@@ -222,6 +223,26 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 - la documentación de endpoints solo existía dentro de un documento Word y no incluía `foto.php`.
 
 **Qué hizo:** escribió `docs/API.md` con los 22 endpoints, usando respuestas reales de la API; actualizó el README con la tabla de requisitos de la v2.0; cambió la versión a 2.0.0 (versionCode 2); generó el APK y la etiqueta `v2.0.0`.
+
+---
+
+## Sesión 15 — Geolocalización
+
+**Prompt:** la descripción de la entrega ("Incorporar geolocalización real a la aplicación": solicitud adecuada de permisos, obtención y visualización de latitud y longitud, una funcionalidad basada en ubicación, manejo de errores y permisos rechazados, y captura o video desde el dispositivo).
+
+**Propuesta de la IA:** que la ubicación sirva al negocio. El admin registra la ubicación de la tienda estando en el local, y cualquier miembro ve a qué distancia está y si está dentro (radio de 100 m), con un botón para abrirla en Google Maps.
+
+**Qué hizo la IA:**
+- **Servidor:** columnas `latitud` y `longitud` en `tiendas` (`migracion_ubicacion.sql`) y la acción `ubicacion` en `tiendas.php`. Solo deja guardar al admin y valida los rangos; lo probó con 5 casos (403 si no es admin, 400 si la latitud está fuera de rango o no es número).
+- **App:**
+  - `GeoService` con Capacitor Geolocation: pide el permiso solo al tocar el botón y traduce los códigos de error del plugin (`OS-PLUG-GLOC-0003` permiso negado, `0007` GPS apagado, `0010` tiempo agotado).
+  - Calcula la distancia con la fórmula de Haversine.
+  - Tarjeta "Ubicación" en el menú de la tienda.
+  - Si Android indica `prompt-with-rationale` (el usuario ya rechazó una vez), muestra una explicación antes de volver a pedir el permiso.
+  - Permisos `ACCESS_COARSE_LOCATION` y `ACCESS_FINE_LOCATION` en el manifiesto.
+- **Prueba en el emulador** (ubicación simulada con `adb emu geo fix`): rechazar el permiso, explicación y aceptación, coordenadas, guardar la ubicación de la tienda (a 0 m), moverse a ~1.5 km (fuera de la tienda), GPS apagado y abrir Google Maps. La distancia se comprobó a mano (≈ 1,450 m).
+
+**Ajuste tras la prueba:** las coordenadas se partían en dos renglones en el teléfono; se cambió a latitud y longitud en una fila y la precisión debajo.
 
 ---
 

@@ -1,6 +1,7 @@
 import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { ActionSheetController, AlertController } from '@ionic/angular';
+import { ActionSheetController, AlertController, ToastController } from '@ionic/angular';
+import { SensoresService } from '../shared/sensores.service';
 import { Subscription } from 'rxjs';
 import { HidScannerService } from '../shared/hid-scanner.service';
 import { StorageService } from '../shared/storage.service';
@@ -66,6 +67,8 @@ export class ProductosPage implements OnInit, OnDestroy {
     private fotos: FotoService,
     private network: NetworkService,
     private cdr: ChangeDetectorRef,
+    private sensores: SensoresService,
+    private toastCtrl: ToastController,
     private hidScanner: HidScannerService,
   ) { }
 
@@ -101,6 +104,29 @@ export class ProductosPage implements OnInit, OnDestroy {
       this.cargarProductos();
     }
     this.yaEntro = true;
+  }
+
+  // ---- Sensor: agitar el teléfono vuelve a pedir los datos al servidor ----
+  private dejarDeAgitar?: () => void;
+
+  async ionViewDidEnter() {
+    this.dejarDeAgitar = await this.sensores.alAgitar(() => this.actualizarAlAgitar());
+  }
+
+  ionViewWillLeave() {
+    this.dejarDeAgitar?.();
+    this.dejarDeAgitar = undefined;
+  }
+
+  private async actualizarAlAgitar() {
+    if (this.cargando) return;
+    await this.cargarProductos();
+    const toast = await this.toastCtrl.create({
+      message: this.errorMsg ? this.errorMsg : 'Productos actualizados (agitaste el teléfono)',
+      duration: 2000, position: 'top', icon: 'phone-portrait-outline',
+      color: this.errorMsg ? 'danger' : 'primary',
+    });
+    await toast.present();
   }
 
   ngOnDestroy() {

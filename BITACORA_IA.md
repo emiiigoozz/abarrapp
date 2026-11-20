@@ -27,6 +27,7 @@ En este documento registro para qué usé la IA en cada etapa del proyecto: qué
 | 13 | 2026-10-25 | Multimedia | Fotos de productos con cámara y galería, visor con zoom, lista responsiva |
 | 14 | 2026-11-05 | Versión 2.0 | Revisión de requisitos, documentación de endpoints (docs/API.md), versión 2.0.0, APK |
 | 15 | 2026-11-13 | Geolocalización | Ubicación de la tienda, distancia y "estás en la tienda", manejo de permisos y errores |
+| 16 | 2026-11-19 | Sensores | Acelerómetro, orientación (nivel), batería, agitar para actualizar y vibración |
 
 ---
 
@@ -246,6 +247,63 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 
 ---
 
+## Sesión 16 — Sensores del dispositivo
+
+**Prompt:** la descripción de la entrega ("Investigar e implementar al menos un sensor o capacidad física disponible desde Capacitor/web APIs", con ejemplos como acelerómetro, orientación, movimiento, cámara, GPS, vibración, red y batería; entregar la app leyendo el sensor, los datos en pantalla, la explicación del evento, el código, un video y el prompt con la validación).
+
+**Investigación de la IA** (antes de escribir código):
+- Revisó qué sensores ya usaba la app: cámara (sesión 13), GPS (sesión 15) y red (sesión 8). Haptics estaba instalado pero no se usaba. Para no repetir, eligió **movimiento, orientación, batería y vibración**.
+- Leyó las definiciones y el código del plugin `@capacitor/motion` en `node_modules`. No tiene código nativo para Android: es una envoltura de los eventos web `devicemotion` (listener `accel`) y `deviceorientation` (listener `orientation`) del WebView. En iOS 13+ hay que pedir permiso con `DeviceMotionEvent.requestPermission()`.
+- Vio que la documentación del plugin describe `orientation` como "grados por segundo", pero el evento `deviceorientation` da ángulos absolutos (alpha 0–360, beta −180–180, gamma −90–90). La pantalla los trata como ángulos.
+- `@capacitor/device` → `getBatteryInfo()` lee el `BatteryManager` en Android y `navigator.getBattery()` en el navegador.
+- El emulador permite simular los sensores desde su consola (`sensor set acceleration x:y:z`, `power capacity`, `power ac on/off`).
+
+**Propuesta de la IA:**
+- Pantalla **Sensores** que muestra los datos en vivo y explica cada evento.
+- Dos usos para la tienda: **agitar para actualizar** el Dashboard y Productos, y un **nivel de burbuja** para acomodar repisas.
+- Aviso de **batería baja** mientras se vende.
+
+**Qué hizo la IA:**
+- `SensoresService`:
+  - Enciende los sensores solo mientras alguna pantalla los usa, para no gastar batería.
+  - Refresca la vista 10 veces por segundo, aunque el sensor manda ~63 lecturas.
+  - Detecta la sacudida: 3 picos de más de 12 m/s² sobre la gravedad en menos de 1.2 s, con 2 s de espera entre una sacudida y otra.
+  - Al detectarla vibra con Haptics.
+  - Avisa si en 3 s no llega ningún dato (dispositivo sin sensor).
+- Pantalla `/sensores`:
+  - Barras de los ejes X, Y y Z.
+  - Fuerza total y giroscopio.
+  - Nivel de burbuja con beta, gamma y alpha.
+  - Batería con estado de carga.
+  - Contador de sacudidas.
+  - Interruptor para activar o desactivar "agitar para actualizar"; la preferencia se guarda en el teléfono.
+- Dashboard y Productos escuchan la sacudida mientras están abiertos y muestran un aviso al actualizar.
+
+**Validación posterior** (emulador Pixel 9, sensores simulados por la consola del emulador; todo se comprobó leyendo la pantalla por la depuración del WebView):
+
+| Prueba | Esperado | Resultado |
+|---|---|---|
+| Teléfono de pie | Y ≈ 9.8 m/s², fuerza total ≈ 9.8 | Y = 9.80, fuerza 9.83 m/s², 63 Hz ✔ |
+| Teléfono acostado | Z ≈ 9.8 y "Superficie nivelada" | Z = 9.80, beta 0.0°, gamma 0.0° ✔ |
+| Inclinado (2.6 : 1.6 : 9.3) | La burbuja se mueve, "Superficie inclinada" | beta 9.3°, gamma −15.5° ✔ |
+| Agitar con picos cada 90 y 200 ms | Cuenta 1 sacudida | Cuenta 1 ✔ |
+| Agitar con picos cada 350 ms | No cuenta (es un movimiento lento, no una sacudida) | No cuenta ✔ |
+| Agitar en el Dashboard y en Productos | Recarga y aviso "… actualizados" | Avisos "Datos actualizados" y "Productos actualizados" ✔ |
+| Interruptor apagado | Agitar no hace nada | Sin aviso ✔ |
+| Vibración | Llamada nativa a Haptics | logcat: `pluginId: Haptics, methodName: impact, {"style":"MEDIUM"}` ✔ |
+| Batería al 15 % sin cargador | Aviso de batería baja | Barra roja y aviso ✔ |
+| Cargador conectado | "Cargando" | ✔ |
+| Navegador de escritorio (sin acelerómetro) | Avisos de "no llegan datos" | Avisos en acelerómetro y orientación; la batería mostró la real de la laptop (72 %) ✔ |
+
+**Ajustes tras la prueba:**
+- El "0" del contador se veía como un cuadro con diagonal por la fuente Orbitron; se cambió a la fuente normal.
+- El texto del interruptor se cortaba; ahora pasa a un segundo renglón.
+- En el navegador, la consulta de la batería tardaba mucho en responder; ahora deja de esperar a los 3 s y lo avisa.
+
+**Limitación de la prueba:** se intentó simular "sin sensor" en el emulador desactivando los sensores con las herramientas de desarrollo (`Emulation.setSensorOverrideEnabled`). En el WebView de Android eso no afecta a `devicemotion`, por eso ese caso se probó en el navegador de escritorio.
+
+---
+
 ## Código aceptado, modificado o descartado
 
 ### Aceptado sin cambios
@@ -292,6 +350,8 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 | 14 | Android cerraba la app sola en el emulador | El emulador tenía 2 GB de RAM y Android 17 con Play Store no cabía | Subir la RAM del emulador a 3 GB | Sí (diagnóstico con `lowmemorykiller` en el log) |
 | 15 | Las fotos se subían pero no se veían | La app corría en `https://localhost` y el WebView bloqueaba las imágenes `http` del servidor por "contenido mixto" (las peticiones de datos sí pasaban) | `server.androidScheme: 'http'` en `capacitor.config.ts` | Sí (detectado con el log de la consola del WebView) |
 | 16 | Sin conexión, los botones de foto seguían activos | La pantalla leía el estado de la red con un getter y, al ser la app zoneless, no se redibujaba al cambiar | Suscribirse a `online$` y redibujar | Sí (detectado en la captura del modo avión) |
+| 17 | La tarjeta de batería se quedaba vacía en el navegador | `navigator.getBattery()` puede tardar mucho o no responder, y la pantalla esperaba sin límite | Límite de 3 s y mensaje "no informa el nivel de batería"; mientras tanto se muestra "Leyendo batería…" | Sí (detectado en la prueba en navegador) |
+| 18 | El emulador se reinició a mitad de la prueba | La PC se quedó sin RAM (0.1 GB libres) por el proceso de Gradle que quedó abierto tras compilar | Detener Gradle (`gradlew --stop`) después de cada compilación | Sí (log `DeadSystemException`) |
 
 ---
 

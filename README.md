@@ -27,6 +27,7 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 - **Recepción de mercancía:** entradas de stock y alta rápida de productos nuevos.
 - **Escáner de códigos de barras:** con la cámara (ZXing) o con un lector USB/Bluetooth tipo teclado.
 - **Geolocalización:** en el menú de la tienda, la app obtiene la ubicación GPS del teléfono (Capacitor Geolocation) y muestra latitud, longitud y precisión. El admin puede guardar esa ubicación como la de la tienda; desde entonces cualquier miembro ve **a qué distancia está de la tienda** y si está dentro de ella (radio de 100 m), y puede abrirla en Google Maps. Maneja permiso rechazado (con explicación antes de volver a pedirlo), GPS apagado y tiempo agotado.
+- **Sensores del teléfono** (pantalla `/sensores`): muestra en vivo el **acelerómetro** y el giroscopio (Capacitor Motion → evento `devicemotion`), la **orientación** con un nivel de burbuja para acomodar repisas (`deviceorientation`) y la **batería** con aviso de batería baja (Capacitor Device). Al **agitar el teléfono** en el Dashboard o en Productos se vuelven a pedir los datos al servidor y el teléfono vibra (Capacitor Haptics); se puede desactivar. Si el dispositivo no tiene un sensor, lo avisa.
 - **Fotos de productos:** se toman con la cámara o se eligen de la galería (Capacitor Camera), se guardan en el servidor y se ven como miniatura en Productos y en el punto de venta. Un visor permite ampliarlas (tocar para acercar), cambiarlas o quitarlas. En pantallas anchas la lista de productos se acomoda en 2 o 3 columnas.
 - **Dashboard:**
   - ingresos, costos, ganancia y unidades vendidas;
@@ -67,7 +68,7 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 | Capa | Tecnología |
 |---|---|
 | App | Ionic 9, Angular 22 (zoneless), TypeScript |
-| Nativo | Capacitor 8 (Android). Plugins: Preferences, Network, App, Keyboard, StatusBar, Haptics |
+| Nativo | Capacitor 8 (Android). Plugins: Preferences, Network, Camera, Geolocation, Motion, Device, Haptics, App, Keyboard, StatusBar |
 | HTTP | Axios (tiempo límite de 10 s por petición) |
 | Gráficas | Chart.js 4 |
 | Códigos de barras | @zxing/browser |
@@ -102,6 +103,7 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 | `/productos` | CRUD de productos de la tienda | admin |
 | `/miembros` | Aceptar solicitudes y cambiar roles | admin |
 | `/usuarios` | CRUD de usuarios del sistema | admin |
+| `/sensores` | Acelerómetro, orientación (nivel), batería y "agitar para actualizar" | Todos los roles |
 
 Las páginas de inventario revisan al abrir que haya sesión y tienda activa; si falta alguna, mandan a `/login` o a `/tiendas`.
 
@@ -285,12 +287,14 @@ App II/
         │   ├── sync.service.ts    ← cola de cambios offline y sincronización
         │   ├── foto.service.ts    ← cámara y galería (Capacitor Camera)
         │   ├── geo.service.ts     ← GPS, permisos y distancia (Capacitor Geolocation)
+        │   ├── sensores.service.ts← acelerómetro, orientación, batería, sacudida y vibración
         │   ├── network.service.ts ← detección de red + mensajeError()
         │   ├── hid-scanner.service.ts
         │   └── barcode-scanner/   ← escáner con cámara
         ├── login/  register/  tiendas/  home/
         ├── productos/  movimientos/  dashboard/
-        └── miembros/  usuarios/
+        ├── miembros/  usuarios/
+        └── sensores/              ← pantalla de sensores del teléfono
 ```
 
 ## Limitaciones conocidas

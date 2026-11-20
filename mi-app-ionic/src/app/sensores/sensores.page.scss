@@ -1,0 +1,314 @@
+.sensores-content {
+  --background: #05060c;
+}
+
+// Una columna en el teléfono; dos en tableta o computadora.
+.sensores-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 16px 16px 24px;
+
+  @media (min-width: 760px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.sensor-card {
+  padding: 18px 18px 14px;
+  border-radius: 20px;
+  background: var(--app-surface);
+  border: 1px solid var(--app-surface-border);
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+
+    ion-icon {
+      font-size: 22px;
+      color: var(--app-glow-cyan);
+    }
+
+    h2 {
+      flex: 1;
+      font-family: var(--font-display);
+      font-size: 15px;
+      margin: 0;
+    }
+  }
+}
+
+.chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(0, 229, 255, 0.12);
+  color: var(--app-glow-cyan);
+}
+
+// ---------- Acelerómetro ----------
+.eje {
+  display: grid;
+  grid-template-columns: 18px minmax(0, 1fr) 58px;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.eje-nombre {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--app-muted);
+}
+
+.eje-barra {
+  position: relative;
+  height: 12px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  overflow: hidden;
+}
+
+.eje-centro {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+.eje-valor-barra {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 6px;
+  transition: left 0.1s linear, width 0.1s linear;
+
+  &.eje-x { background: #ff5c7c; }
+  &.eje-y { background: #3ddc97; }
+  &.eje-z { background: var(--app-glow-cyan); }
+}
+
+.eje-valor {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+}
+
+.dato-fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13.5px;
+
+  span { color: var(--app-muted); }
+  strong { font-variant-numeric: tabular-nums; text-align: right; }
+}
+
+.explica {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--app-muted);
+
+  code {
+    font-size: 11.5px;
+    padding: 1px 5px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.07);
+    color: #eef1ff;
+  }
+
+  b, strong { color: #eef1ff; font-weight: 600; }
+}
+
+// ---------- Agitar ----------
+.contador {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 0 12px;
+
+  strong {
+    font-size: 48px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+    color: var(--app-glow-cyan);
+  }
+
+  span { font-size: 13px; color: var(--app-muted); }
+  small { margin-top: 4px; font-size: 12px; color: var(--app-muted); }
+}
+
+.toggle-item {
+  --background: rgba(255, 255, 255, 0.04);
+  --border-radius: 12px;
+  border-radius: 12px;
+  font-size: 13.5px;
+
+  ion-toggle { --track-background-checked: var(--app-glow-cyan); }
+  ion-toggle::part(label) { white-space: normal; }
+}
+
+// ---------- Nivel de burbuja ----------
+.nivel {
+  position: relative;
+  width: 140px;
+  height: 140px;
+  margin: 4px auto 10px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(61, 220, 151, 0.12), rgba(61, 220, 151, 0.03));
+  border: 2px solid rgba(255, 255, 255, 0.15);
+
+  &.nivelado { border-color: #3ddc97; }
+}
+
+.nivel-cruz {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12)) center / 1px 100% no-repeat,
+    linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12)) center / 100% 1px no-repeat;
+}
+
+.nivel-centro {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 40px;
+  height: 40px;
+  margin: -20px 0 0 -20px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.35);
+}
+
+.nivel-burbuja {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 30px;
+  height: 30px;
+  margin: -15px 0 0 -15px;
+  border-radius: 50%;
+  background: #3ddc97;
+  box-shadow: 0 0 16px rgba(61, 220, 151, 0.7);
+  transition: transform 0.1s linear;
+}
+
+.nivel-estado {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin: 0 0 10px;
+  font-size: 14px;
+  color: #ffc857;
+
+  &.ok { color: #3ddc97; }
+}
+
+.angulos {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+
+  div {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 8px 4px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.04);
+  }
+
+  span { font-size: 11px; color: var(--app-muted); text-transform: uppercase; }
+  strong { font-size: 16px; font-variant-numeric: tabular-nums; }
+  small { font-size: 10.5px; color: var(--app-muted); }
+}
+
+// ---------- Batería ----------
+.bateria {
+  position: relative;
+  height: 34px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+  margin-bottom: 8px;
+
+  span {
+    position: relative;
+    display: flex;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+  }
+
+  &.baja .bateria-relleno { background: linear-gradient(90deg, #ff5c7c, #ff8a5c); }
+}
+
+.bateria-relleno {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #3ddc97, var(--app-glow-cyan));
+  opacity: 0.55;
+  transition: width 0.3s;
+}
+
+.leyendo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 13px;
+  color: var(--app-muted);
+}
+
+// ---------- Avisos ----------
+.aviso {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 0 0 12px;
+  padding: 11px 13px;
+  border-radius: 14px;
+  font-size: 13px;
+
+  ion-icon { font-size: 19px; flex-shrink: 0; }
+  a { color: inherit; text-decoration: underline; cursor: pointer; }
+}
+
+.aviso-error {
+  background: rgba(255, 92, 124, 0.1);
+  border: 1px solid rgba(255, 92, 124, 0.35);
+  color: #ffb3c1;
+  ion-icon { color: #ff5c7c; }
+}
+
+.aviso-alerta {
+  margin-top: 10px;
+  background: rgba(255, 200, 87, 0.1);
+  border: 1px solid rgba(255, 200, 87, 0.35);
+  color: #ffe0a3;
+  ion-icon { color: #ffc857; }
+}
+
+// Pequeña animación del icono cuando hay sacudidas.
+.icono-agitar.vibra {
+  animation: sacudir 0.5s ease-in-out;
+}
+
+@keyframes sacudir {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-15deg); }
+  75% { transform: rotate(15deg); }
+}

@@ -1,0 +1,156 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Sensores</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="sensores-content">
+  <div class="sensores-grid">
+
+    <p class="aviso aviso-error" *ngIf="sinPermiso()" role="alert">
+      <ion-icon name="lock-closed-outline"></ion-icon>
+      <span>No diste permiso para leer el movimiento del teléfono.
+        <a (click)="reintentar()">Volver a intentar</a></span>
+    </p>
+
+    <!-- ===================== ACELERÓMETRO ===================== -->
+    <section class="sensor-card" aria-labelledby="t-accel">
+      <header>
+        <ion-icon name="speedometer-outline"></ion-icon>
+        <h2 id="t-accel">Acelerómetro</h2>
+        <span class="chip" *ngIf="s.frecuenciaHz()">{{ s.frecuenciaHz() }} Hz</span>
+      </header>
+
+      <p class="aviso aviso-error" *ngIf="s.sinAcelerometro()" role="alert">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <span>No llegan datos del acelerómetro: el dispositivo no tiene el sensor o no lo comparte con la app.</span>
+      </p>
+
+      <ng-container *ngIf="s.aceleracion() as a">
+        <div class="eje" *ngFor="let e of ejes">
+          <span class="eje-nombre">{{ e | uppercase }}</span>
+          <div class="eje-barra">
+            <div class="eje-centro"></div>
+            <div class="eje-valor-barra" [class]="'eje-' + e" [ngStyle]="barra(a[e])"></div>
+          </div>
+          <span class="eje-valor">{{ a[e] | number:'1.2-2' }}</span>
+        </div>
+        <div class="dato-fila">
+          <span>Fuerza total</span>
+          <strong>{{ magnitud() | number:'1.2-2' }} m/s²</strong>
+        </div>
+        <div class="dato-fila" *ngIf="s.rotacion() as r">
+          <span>Giro (giroscopio)</span>
+          <strong>{{ r.x | number:'1.0-0' }} · {{ r.y | number:'1.0-0' }} · {{ r.z | number:'1.0-0' }} °/s</strong>
+        </div>
+      </ng-container>
+
+      <p class="explica">
+        <strong>Evento:</strong> <code>devicemotion</code> (Capacitor Motion, listener <code>accel</code>).
+        Mide la aceleración en metros por segundo² sobre los tres ejes del teléfono:
+        <b>X</b> izquierda↔derecha, <b>Y</b> abajo↔arriba y <b>Z</b> atrás↔frente de la pantalla.
+        Incluye la gravedad: con el teléfono acostado y quieto, Z marca ≈ {{ gravedad }} y la fuerza total también.
+      </p>
+    </section>
+
+    <!-- ===================== AGITAR ===================== -->
+    <section class="sensor-card" aria-labelledby="t-agitar">
+      <header>
+        <ion-icon name="phone-portrait-outline" class="icono-agitar" [class.vibra]="s.sacudidas() > 0"></ion-icon>
+        <h2 id="t-agitar">Agitar para actualizar</h2>
+      </header>
+
+      <div class="contador">
+        <strong>{{ s.sacudidas() }}</strong>
+        <span>{{ s.sacudidas() === 1 ? 'sacudida detectada' : 'sacudidas detectadas' }}</span>
+        <small *ngIf="s.ultimaSacudida() as u">Última: {{ u | date:'HH:mm:ss' }}</small>
+      </div>
+
+      <ion-item lines="none" class="toggle-item">
+        <ion-toggle [checked]="agitarActivo" (ionChange)="cambiarAgitar($event.detail.checked)">
+          Actualizar Dashboard y Productos al agitar el teléfono
+        </ion-toggle>
+      </ion-item>
+
+      <p class="explica">
+        Una sacudida son <b>3 picos</b> en menos de 1.2 s en los que la fuerza total se aleja más de
+        {{ umbral }} m/s² de la gravedad. Al detectarla el teléfono <b>vibra</b> (Capacitor Haptics) y,
+        en el Dashboard o en Productos, vuelve a pedir los datos al servidor.
+      </p>
+    </section>
+
+    <!-- ===================== ORIENTACIÓN / NIVEL ===================== -->
+    <section class="sensor-card" aria-labelledby="t-nivel">
+      <header>
+        <ion-icon name="compass-outline"></ion-icon>
+        <h2 id="t-nivel">Orientación · nivel</h2>
+      </header>
+
+      <p class="aviso aviso-error" *ngIf="s.sinOrientacion()" role="alert">
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        <span>No llegan datos de orientación en este dispositivo.</span>
+      </p>
+
+      <ng-container *ngIf="s.orientacion() as o">
+        <div class="nivel" [class.nivelado]="burbuja().nivelado" aria-hidden="true">
+          <div class="nivel-cruz"></div>
+          <div class="nivel-centro"></div>
+          <div class="nivel-burbuja" [style.transform]="'translate(' + burbuja().x + 'px,' + burbuja().y + 'px)'"></div>
+        </div>
+        <p class="nivel-estado" [class.ok]="burbuja().nivelado">
+          <ion-icon [name]="burbuja().nivelado ? 'checkmark-circle' : 'move-outline'"></ion-icon>
+          {{ burbuja().nivelado ? 'Superficie nivelada' : 'Superficie inclinada' }}
+        </p>
+        <div class="angulos">
+          <div><span>Beta</span><strong>{{ o.beta | number:'1.1-1' }}°</strong><small>adelante/atrás</small></div>
+          <div><span>Gamma</span><strong>{{ o.gamma | number:'1.1-1' }}°</strong><small>izq./der.</small></div>
+          <div><span>Alpha</span><strong>{{ o.alpha === null ? '—' : (o.alpha | number:'1.0-0') + '°' }}</strong><small>brújula</small></div>
+        </div>
+      </ng-container>
+
+      <p class="explica">
+        <strong>Evento:</strong> <code>deviceorientation</code> (listener <code>orientation</code>).
+        Da la inclinación del teléfono en grados. Pon el teléfono acostado sobre una repisa o anaquel
+        para saber si quedó derecho antes de acomodar la mercancía.
+      </p>
+    </section>
+
+    <!-- ===================== BATERÍA ===================== -->
+    <section class="sensor-card" aria-labelledby="t-bateria">
+      <header>
+        <ion-icon [name]="s.bateria()?.cargando ? 'battery-charging-outline' : 'battery-half-outline'"></ion-icon>
+        <h2 id="t-bateria">Batería</h2>
+      </header>
+
+      <p class="leyendo" *ngIf="!s.bateria()"><ion-spinner name="dots"></ion-spinner> Leyendo batería…</p>
+      <ng-container *ngIf="s.bateria() as b">
+        <ng-container *ngIf="b.nivel !== null; else sinBateria">
+          <div class="bateria" [class.baja]="b.nivel <= bateriaBaja && !b.cargando">
+            <div class="bateria-relleno" [style.width.%]="b.nivel"></div>
+            <span>{{ b.nivel }}%</span>
+          </div>
+          <div class="dato-fila">
+            <span>Estado</span>
+            <strong>{{ b.cargando ? 'Cargando' : 'Usando batería' }}</strong>
+          </div>
+          <p class="aviso aviso-alerta" *ngIf="b.nivel <= bateriaBaja && !b.cargando" role="alert">
+            <ion-icon name="warning-outline"></ion-icon>
+            <span>Batería baja. Conecta el cargador para no cortar una venta; lo que registres sin conexión queda guardado en el teléfono.</span>
+          </p>
+        </ng-container>
+        <ng-template #sinBateria>
+          <p class="aviso aviso-error"><ion-icon name="alert-circle-outline"></ion-icon><span>Este dispositivo no informa el nivel de batería.</span></p>
+        </ng-template>
+      </ng-container>
+
+      <p class="explica">
+        <strong>Dato:</strong> <code>Device.getBatteryInfo()</code> (Capacitor Device), que en Android lee el
+        <code>BatteryManager</code>. Se consulta cada 5 s mientras esta pantalla está abierta.
+      </p>
+    </section>
+
+  </div>
+</ion-content>

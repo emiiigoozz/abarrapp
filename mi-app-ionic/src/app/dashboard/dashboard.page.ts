@@ -6,6 +6,8 @@ import { StorageService } from '../shared/storage.service';
 import { ApiService } from '../shared/api.service';
 import { SyncService } from '../shared/sync.service';
 import { mensajeError } from '../shared/network.service';
+import { SensoresService } from '../shared/sensores.service';
+import { ToastController } from '@ionic/angular';
 import { AlertaPerdida, AlertaStock, GananciaDia, Resumen, TopProducto } from '../models';
 
 @Component({
@@ -39,6 +41,8 @@ export class DashboardPage implements OnInit, AfterViewInit, OnDestroy {
     private api: ApiService,
     private sync: SyncService,
     private cdr: ChangeDetectorRef,
+    private sensores: SensoresService,
+    private toastCtrl: ToastController,
   ) { }
 
   ngOnInit() {
@@ -66,6 +70,29 @@ export class DashboardPage implements OnInit, AfterViewInit, OnDestroy {
       this.cargarDashboard();
     }
     this.yaEntro = true;
+  }
+
+  // ---- Sensor: agitar el teléfono vuelve a pedir los datos al servidor ----
+  private dejarDeAgitar?: () => void;
+
+  async ionViewDidEnter() {
+    this.dejarDeAgitar = await this.sensores.alAgitar(() => this.actualizarAlAgitar());
+  }
+
+  ionViewWillLeave() {
+    this.dejarDeAgitar?.();
+    this.dejarDeAgitar = undefined;
+  }
+
+  private async actualizarAlAgitar() {
+    if (this.cargando) return;
+    await this.cargarDashboard();
+    const toast = await this.toastCtrl.create({
+      message: this.errorMsg ? this.errorMsg : 'Datos actualizados (agitaste el teléfono)',
+      duration: 2000, position: 'top', icon: 'phone-portrait-outline',
+      color: this.errorMsg ? 'danger' : 'primary',
+    });
+    await toast.present();
   }
 
   ngOnDestroy() {

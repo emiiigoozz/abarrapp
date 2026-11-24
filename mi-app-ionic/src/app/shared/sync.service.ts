@@ -1,9 +1,10 @@
-import { Injectable, signal } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { ItemVenta, Movimiento, Producto, ProductoForm } from '../models';
 import { ApiService } from './api.service';
 import { mensajeError, NetworkService } from './network.service';
 import { StorageService } from './storage.service';
+import { ContextoService } from './contexto.service';
 
 export type TipoOperacion = 'crearProducto' | 'actualizarProducto' | 'eliminarProducto' | 'venta' | 'entrada';
 
@@ -29,7 +30,6 @@ export interface OperacionFallida extends OperacionPendiente {
 
 const CLAVE_COLA = 'sync_cola';
 const CLAVE_FALLIDAS = 'sync_fallidas';
-const REINTENTO_MS = 15000;
 
 /** Un error sin respuesta HTTP significa que no se llegó al servidor (sin red o servidor apagado). */
 export const esErrorDeConexion = (err: any): boolean => !err?.response;
@@ -52,6 +52,8 @@ export class SyncService {
   /** Emite cuántos cambios se enviaron al terminar una sincronización. */
   readonly sincronizado$ = new Subject<number>();
 
+  private readonly contexto = inject(ContextoService);
+
   constructor(
     private storage: StorageService,
     private api: ApiService,
@@ -65,7 +67,12 @@ export class SyncService {
     // Recuperación de conexión: en cuanto vuelve la red se envía la cola.
     this.network.online$.subscribe(online => { if (online) this.sincronizar(); });
     // Si hay red pero el servidor estaba caído, se reintenta cada cierto tiempo.
-    setInterval(() => this.sincronizar(), REINTENTO_MS);
+    // El intervalo lo decide el motor de reglas: 15 s normalmente, 60 s en ahorro de batería (R4).
+    const programar = () => setTimeout(() => {
+      this.sincronizar();
+      programar();
+    }, this.contexto.decision().intervaloSyncMs);
+    programar();
   }
 
   /**

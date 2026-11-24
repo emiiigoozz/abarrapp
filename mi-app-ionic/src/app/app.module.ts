@@ -1,4 +1,5 @@
 import { NgModule, inject, provideAppInitializer } from '@angular/core';
+import { ContextoService } from './shared/contexto.service';
 import { BrowserModule } from '@angular/platform-browser';
 import { RouteReuseStrategy } from '@angular/router';
 
@@ -21,10 +22,12 @@ import { SyncService } from './shared/sync.service';
       const storage = inject(StorageService);
       const network = inject(NetworkService);
       const sync = inject(SyncService);
+      const contexto = inject(ContextoService);
       return (async () => {
         await storage.init();
         await network.init();
         sync.init();
+        contexto.init();
       })();
     }),
   ],

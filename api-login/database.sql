@@ -72,15 +72,18 @@ CREATE TABLE IF NOT EXISTS movimientos (
   FOREIGN KEY (producto_id) REFERENCES productos(id) ON DELETE CASCADE
 );
 
--- Datos de demostración: usuario demo@abarrapp.com / demo1234, con su tienda y productos.
+-- Datos de demostración: demo@abarrapp.com (admin) y trabajador@abarrapp.com (trabajador),
+-- ambos con contraseña demo1234, con su tienda (y su ubicación) y productos.
 INSERT INTO usuarios (id, nombre, usuario, email, password, rol, estado) VALUES
-(1, 'Demo AbarrApp', 'demo', 'demo@abarrapp.com', '$2y$10$HodIYd4WxRHhMsU/BibUEOLz3gl9tNcCIZ7fAYX/R2UQYsXBkrxx2', 'admin', 1);
+(1, 'Demo AbarrApp', 'demo', 'demo@abarrapp.com', '$2y$10$HodIYd4WxRHhMsU/BibUEOLz3gl9tNcCIZ7fAYX/R2UQYsXBkrxx2', 'admin', 1),
+(2, 'Trabajador Demo', 'trabajador', 'trabajador@abarrapp.com', '$2y$10$HodIYd4WxRHhMsU/BibUEOLz3gl9tNcCIZ7fAYX/R2UQYsXBkrxx2', 'usuario', 1);
 
-INSERT INTO tiendas (id, nombre, codigo_invitacion, dueno_id) VALUES
-(1, 'Abarrotes Demo', 'DEMO01', 1);
+INSERT INTO tiendas (id, nombre, codigo_invitacion, dueno_id, latitud, longitud) VALUES
+(1, 'Abarrotes Demo', 'DEMO01', 1, 24.0277200, -104.6531750);
 
 INSERT INTO tienda_miembros (tienda_id, usuario_id, rol, estado) VALUES
-(1, 1, 'admin', 'aceptado');
+(1, 1, 'admin', 'aceptado'),
+(1, 2, 'trabajador', 'aceptado');
 
 INSERT INTO productos (tienda_id, nombre, codigo, categoria, costo, precio_venta, stock) VALUES
 (1, 'Coca Cola 600ml', '7501055300210', 'Bebidas', 12.00, 18.00, 24),

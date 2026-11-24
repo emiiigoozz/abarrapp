@@ -47,6 +47,10 @@ const routes: Routes = [
     path: 'sensores',
     loadChildren: () => import('./sensores/sensores.module').then( m => m.SensoresPageModule)
   },
+  {
+    path: 'reglas',
+    loadChildren: () => import('./reglas/reglas.module').then( m => m.ReglasPageModule)
+  },
 ];
 
 @NgModule({

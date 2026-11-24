@@ -6,6 +6,7 @@ import { ApiService } from '../shared/api.service';
 import { mensajeError, NetworkService } from '../shared/network.service';
 import { ErrorUbicacion, GeoService, RADIO_TIENDA_M, TipoErrorUbicacion, Ubicacion } from '../shared/geo.service';
 import { Tienda } from '../models';
+import { ContextoService } from '../shared/contexto.service';
 
 @Component({
   selector: 'app-home',
@@ -39,18 +40,35 @@ export class HomePage implements OnInit {
     private network: NetworkService,
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
+    private contexto: ContextoService,
   ) { }
 
-  ngOnInit() {
+  ngOnInit() { }
+
+  /**
+   * Ionic reutiliza esta pantalla al volver a /home (por ejemplo, después de cerrar sesión y entrar
+   * con otro usuario, o de cambiar de tienda), así que la sesión se lee cada vez que se entra y no
+   * solo la primera (si no, el menú mostraba los botones del rol anterior).
+   */
+  ionViewWillEnter() {
     const tiendaId = this.storage.get('tienda_id');
     if (!tiendaId) {
       this.router.navigateByUrl('/tiendas');
       return;
     }
+    if (Number(tiendaId) !== this.tiendaId) {
+      // Otra tienda: la ubicación y los mensajes de la anterior ya no aplican.
+      this.tienda = null;
+      this.ubicacion = null;
+      this.errorUbicacion = '';
+      this.okUbicacion = '';
+    }
     this.tiendaId = Number(tiendaId);
     this.usuarioId = this.storage.getJSON<{ id: number }>('user')?.id ?? 0;
     this.tiendaNombre = this.storage.get('tienda_nombre') || '';
     this.tiendaRol = this.storage.get('tienda_rol') || '';
+    this.contexto.refrescarSesion();
+    this.cdr.detectChanges();
     this.cargarTienda();
   }
 
@@ -109,6 +127,7 @@ export class HomePage implements OnInit {
     this.cdr.detectChanges();
     try {
       this.ubicacion = await this.geo.obtener();
+      this.contexto.registrarUbicacion(this.ubicacion, this.tienda);
     } catch (err) {
       const e = err as ErrorUbicacion;
       this.errorUbicacion = e.message;
@@ -145,6 +164,7 @@ export class HomePage implements OnInit {
       await this.api.guardarUbicacionTienda(this.usuarioId, this.tiendaId, this.ubicacion.latitud, this.ubicacion.longitud);
       this.okUbicacion = 'Ubicación de la tienda guardada';
       await this.cargarTienda();
+      this.contexto.registrarUbicacion(this.ubicacion, this.tienda);
     } catch (err) {
       this.errorUbicacion = mensajeError(err, 'No se pudo guardar la ubicación de la tienda');
     } finally {

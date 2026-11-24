@@ -28,6 +28,7 @@ En este documento registro para qué usé la IA en cada etapa del proyecto: qué
 | 14 | 2026-11-05 | Versión 2.0 | Revisión de requisitos, documentación de endpoints (docs/API.md), versión 2.0.0, APK |
 | 15 | 2026-11-13 | Geolocalización | Ubicación de la tienda, distancia y "estás en la tienda", manejo de permisos y errores |
 | 16 | 2026-11-19 | Sensores | Acelerómetro, orientación (nivel), batería, agitar para actualizar y vibración |
+| 17 | 2026-11-24 | Reglas de contexto | Motor de reglas (ubicación, conexión, batería, rol), 4 reglas, pruebas unitarias y diagrama |
 
 ---
 
@@ -304,6 +305,31 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 
 ---
 
+## Sesión 17 — Reglas de contexto
+
+**Prompt:** la descripción de la entrega ("Crear reglas para que el comportamiento de la aplicación cambie dependiendo del contexto", con el ejemplo "si el usuario se encuentra dentro de determinada zona y existe conexión a Internet, habilitar cierta funcionalidad"; entregar al menos dos variables de contexto, tres reglas de decisión, código funcional, diagrama, tres escenarios de prueba y un documento sobre cómo ayudó la IA).
+
+**Cómo ayudó la IA a diseñar las reglas:**
+- **Variables.** Revisó qué datos de contexto ya tenía la app de entregas anteriores: la ubicación de la tienda (sesión 15), la red (sesión 8), la batería (sesión 16) y el rol (sesión 5). Propuso usar las cuatro en lugar de inventar nuevas.
+- **Reglas.** Las pensó para el negocio. En la tienda se vende normal (R1) o sin conexión con la cola que ya existía (R2). Fuera de la tienda un trabajador no debería vender (R3), pero el dueño sí, porque puede necesitar registrar algo desde fuera. Con poca batería se apaga lo que más consume (R4).
+- **Casos que no venían en el enunciado:**
+  - Ubicación desconocida (sin permiso o GPS apagado): se trata como "fuera", para que no sea una forma de saltarse la regla.
+  - Tienda sin ubicación registrada: no bloquea, porque no hay contra qué comparar.
+  - La ubicación verificada vence a los 10 minutos.
+  - El lector nunca vende.
+  - Dos reglas pueden estar activas a la vez (R3 + R4).
+- **Diseño del código.** Las reglas son una lista declarativa (`id`, `si`, `entonces`, `cumple()`, `aplicar()`) en funciones puras sin Angular. Así se prueban sin emulador y la misma lista alimenta la pantalla `/reglas` y el diagrama. Un `ContextoService` con signals recalcula la decisión cada vez que cambia una variable.
+
+**Validación:**
+- **12 pruebas unitarias** (Vitest): un caso por regla, combinaciones, el límite de 20 % y el lector. La primera corrida tuvo un fallo, pero el error estaba en la prueba: 1,450 m se redondea a "1.4 km". Se corrigió el valor esperado.
+- **5 escenarios en el emulador** con un usuario trabajador y uno admin. La ubicación se simuló con `geo fix`, la red con el modo avión y la batería con la consola del emulador. Detalle en [docs/REGLAS.md](docs/REGLAS.md).
+
+**Problemas que salieron en la prueba:**
+- Con el admin fuera de la tienda, el aviso del punto de venta decía "Venta en mostrador". Cada regla ahora pone su propio título ("Venta fuera de la tienda (admin)").
+- Al cerrar sesión y entrar con otro usuario, el menú de inicio seguía mostrando el rol anterior (error de antes; ver problema 19).
+
+---
+
 ## Código aceptado, modificado o descartado
 
 ### Aceptado sin cambios
@@ -352,6 +378,7 @@ También configuró los headers CORS para permitir peticiones desde el servidor 
 | 16 | Sin conexión, los botones de foto seguían activos | La pantalla leía el estado de la red con un getter y, al ser la app zoneless, no se redibujaba al cambiar | Suscribirse a `online$` y redibujar | Sí (detectado en la captura del modo avión) |
 | 17 | La tarjeta de batería se quedaba vacía en el navegador | `navigator.getBattery()` puede tardar mucho o no responder, y la pantalla esperaba sin límite | Límite de 3 s y mensaje "no informa el nivel de batería"; mientras tanto se muestra "Leyendo batería…" | Sí (detectado en la prueba en navegador) |
 | 18 | El emulador se reinició a mitad de la prueba | La PC se quedó sin RAM (0.1 GB libres) por el proceso de Gradle que quedó abierto tras compilar | Detener Gradle (`gradlew --stop`) después de cada compilación | Sí (log `DeadSystemException`) |
+| 19 | Al cambiar de usuario o de tienda, el menú de inicio mostraba los botones del rol anterior | Ionic reutiliza la pantalla de inicio al volver a `/home` y el rol solo se leía en `ngOnInit` | Leer la sesión en `ionViewWillEnter` | Sí (detectado en la prueba de reglas con dos usuarios) |
 
 ---
 

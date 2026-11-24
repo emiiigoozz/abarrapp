@@ -32,6 +32,26 @@
     </button>
   </div>
 
+  <!-- Reglas de contexto: modo de venta según ubicación, conexión, batería y rol -->
+  <div class="regla-banner" *ngIf="modo === 'vender'"
+    [ngClass]="!contexto.decision().puedeVender ? 'modo-bloqueado' : contexto.decision().avisoVenta ? 'modo-cola' : 'modo-servidor'">
+    <ion-icon [name]="!contexto.decision().puedeVender ? 'lock-closed-outline' : contexto.decision().modoVenta === 'cola' ? 'cloud-offline-outline' : contexto.decision().avisoVenta ? 'warning-outline' : 'storefront-outline'"></ion-icon>
+    <div class="regla-texto">
+      <strong>
+        {{ contexto.decision().tituloVenta }}
+        <span class="regla-ids">{{ contexto.decision().reglasActivas.join(' · ') }}</span>
+      </strong>
+      <span *ngIf="contexto.decision().avisoVenta">{{ contexto.decision().avisoVenta }}</span>
+      <span *ngIf="!contexto.decision().avisoVenta">Estás en la tienda y con conexión: las ventas se registran en el servidor.</span>
+      <span *ngIf="contexto.errorUbicacion()" class="regla-error">{{ contexto.errorUbicacion() }}</span>
+    </div>
+    <ion-button *ngIf="contexto.contexto().ubicacion !== 'en_tienda' && contexto.contexto().ubicacion !== 'sin_registro'"
+      size="small" fill="outline" shape="round" [disabled]="contexto.verificando()" (click)="contexto.verificarUbicacion()">
+      <ion-spinner *ngIf="contexto.verificando()" name="crescent"></ion-spinner>
+      <ng-container *ngIf="!contexto.verificando()"><ion-icon slot="start" name="locate-outline"></ion-icon>Verificar ubicación</ng-container>
+    </ion-button>
+  </div>
+
   <p class="error-msg" *ngIf="errorMsg">{{ errorMsg }}</p>
   <p class="ok-msg" *ngIf="okMsg">{{ okMsg }}</p>
 
@@ -75,7 +95,7 @@
           <strong>${{ totalCarrito.toFixed(2) }}</strong>
         </div>
 
-        <ion-button expand="block" shape="round" class="finalizar-btn" [disabled]="procesandoVenta || carrito.length === 0" (click)="terminarVenta()">
+        <ion-button expand="block" shape="round" class="finalizar-btn" [disabled]="procesandoVenta || carrito.length === 0 || !contexto.decision().puedeVender" (click)="terminarVenta()">
           <ion-spinner *ngIf="procesandoVenta" name="crescent"></ion-spinner>
           <span *ngIf="!procesandoVenta">Terminar venta</span>
         </ion-button>

@@ -6,6 +6,7 @@ import { HidScannerService } from '../shared/hid-scanner.service';
 import { StorageService } from '../shared/storage.service';
 import { ApiService } from '../shared/api.service';
 import { SyncService } from '../shared/sync.service';
+import { ContextoService } from '../shared/contexto.service';
 import { mensajeError } from '../shared/network.service';
 import { ItemCarrito, Movimiento, ProductoVenta, RespuestaVenta } from '../models';
 
@@ -64,6 +65,7 @@ export class MovimientosPage implements OnInit, OnDestroy {
     private alertCtrl: AlertController,
     private cdr: ChangeDetectorRef,
     private hidScanner: HidScannerService,
+    readonly contexto: ContextoService,
   ) { }
 
   ngOnInit() {
@@ -98,6 +100,9 @@ export class MovimientosPage implements OnInit, OnDestroy {
       this.cargarTodo();
     }
     this.yaEntro = true;
+    // Regla R3: para vender hay que estar en la tienda. Si el permiso ya está concedido,
+    // la ubicación se verifica sola al abrir el punto de venta.
+    this.contexto.verificarUbicacion(false);
   }
 
   ngOnDestroy() {
@@ -220,6 +225,11 @@ export class MovimientosPage implements OnInit, OnDestroy {
   async terminarVenta() {
     if (this.carrito.length === 0) {
       this.errorMsg = 'El carrito está vacío';
+      return;
+    }
+    const decision = this.contexto.decision();
+    if (!decision.puedeVender) {
+      this.errorMsg = decision.avisoVenta ?? 'No puedes vender en este momento.';
       return;
     }
 

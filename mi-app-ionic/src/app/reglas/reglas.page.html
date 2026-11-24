@@ -1,0 +1,87 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Reglas de contexto</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="reglas-content">
+  <div class="reglas-wrap">
+
+    <!-- ============ VARIABLES DE CONTEXTO ============ -->
+    <h2 class="seccion">Variables de contexto</h2>
+    <div class="variables">
+      <div class="variable" [ngClass]="'u-' + c.contexto().ubicacion">
+        <ion-icon name="location-outline"></ion-icon>
+        <span class="var-nombre">Ubicación</span>
+        <strong>{{ ubicacionTexto() }}</strong>
+        <small *ngIf="distanciaTexto()">{{ distanciaTexto() }}<ng-container *ngIf="c.ubicacionFecha() as f"> · {{ f | date:'HH:mm' }}</ng-container></small>
+      </div>
+      <div class="variable" [class.ok]="c.contexto().online" [class.mal]="!c.contexto().online">
+        <ion-icon [name]="c.contexto().online ? 'wifi-outline' : 'cloud-offline-outline'"></ion-icon>
+        <span class="var-nombre">Conexión</span>
+        <strong>{{ c.contexto().online ? 'Con Internet' : 'Sin Internet' }}</strong>
+      </div>
+      <div class="variable" [class.mal]="c.decision().ahorroBateria" [class.ok]="!c.decision().ahorroBateria && c.contexto().bateria !== null">
+        <ion-icon [name]="c.contexto().cargando ? 'battery-charging-outline' : 'battery-half-outline'"></ion-icon>
+        <span class="var-nombre">Batería</span>
+        <strong>{{ c.contexto().bateria === null ? 'No disponible' : c.contexto().bateria + ' %' }}</strong>
+        <small *ngIf="c.contexto().bateria !== null">{{ c.contexto().cargando ? 'cargando' : 'sin cargador' }}</small>
+      </div>
+      <div class="variable">
+        <ion-icon name="person-outline"></ion-icon>
+        <span class="var-nombre">Rol</span>
+        <strong class="capital">{{ c.contexto().rol }}</strong>
+      </div>
+    </div>
+
+    <ion-button expand="block" shape="round" fill="outline" class="verificar" [disabled]="c.verificando()" (click)="c.verificarUbicacion()">
+      <ion-spinner *ngIf="c.verificando()" name="crescent"></ion-spinner>
+      <ng-container *ngIf="!c.verificando()"><ion-icon slot="start" name="locate-outline"></ion-icon>Verificar ubicación</ng-container>
+    </ion-button>
+    <p class="aviso-error" *ngIf="c.errorUbicacion()" role="alert">{{ c.errorUbicacion() }}</p>
+
+    <!-- ============ REGLAS ============ -->
+    <h2 class="seccion">Reglas</h2>
+    <div class="regla" *ngFor="let r of reglas" [class.activa]="activa(r.id)">
+      <div class="regla-cab">
+        <span class="regla-id">{{ r.id }}</span>
+        <strong>{{ r.nombre }}</strong>
+        <span class="estado">{{ activa(r.id) ? 'ACTIVA' : 'no aplica' }}</span>
+      </div>
+      <p><b>SI</b> {{ r.si }}</p>
+      <p><b>ENTONCES</b> {{ r.entonces }}</p>
+    </div>
+
+    <!-- ============ DECISIÓN ============ -->
+    <h2 class="seccion">Comportamiento actual de la app</h2>
+    <div class="decision">
+      <div class="dec-fila">
+        <span>Vender</span>
+        <strong [ngClass]="'modo-' + c.decision().modoVenta">
+          {{ c.decision().modoVenta === 'servidor' ? 'Permitido · directo al servidor' : c.decision().modoVenta === 'cola' ? 'Permitido · se guarda en el teléfono' : 'Bloqueado' }}
+        </strong>
+      </div>
+      <div class="dec-fila">
+        <span>Fotos de productos</span>
+        <strong [class.no]="c.decision().ahorroBateria || !c.contexto().online">{{ c.decision().ahorroBateria ? 'Desactivadas (ahorro)' : c.contexto().online ? 'Activas' : 'Sin conexión' }}</strong>
+      </div>
+      <div class="dec-fila">
+        <span>Agitar para actualizar</span>
+        <strong [class.no]="c.decision().ahorroBateria">{{ c.decision().ahorroBateria ? 'Apagado (ahorro)' : 'Disponible' }}</strong>
+      </div>
+      <div class="dec-fila">
+        <span>Sincronización automática</span>
+        <strong>cada {{ c.decision().intervaloSyncMs / 1000 }} s</strong>
+      </div>
+      <p class="dec-aviso" *ngIf="c.decision().avisoVenta">{{ c.decision().avisoVenta }}</p>
+    </div>
+
+    <p class="nota">
+      Las reglas se evalúan solas cada vez que cambia una variable. La ubicación verificada vale 10 minutos;
+      después hay que verificarla otra vez. Modo ahorro: batería ≤ {{ bateriaAhorro }} % sin cargador.
+    </p>
+  </div>
+</ion-content>

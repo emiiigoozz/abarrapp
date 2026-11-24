@@ -71,11 +71,11 @@
         </ng-template>
       </div>
       <div class="foto-acciones">
-        <ion-button size="small" fill="outline" shape="round" [disabled]="!online" (click)="fotoFormulario('camara')">
+        <ion-button size="small" fill="outline" shape="round" [disabled]="!fotosDisponibles" (click)="fotoFormulario('camara')">
           <ion-icon slot="start" name="camera-outline"></ion-icon>
           Cámara
         </ion-button>
-        <ion-button size="small" fill="outline" shape="round" [disabled]="!online" (click)="fotoFormulario('galeria')">
+        <ion-button size="small" fill="outline" shape="round" [disabled]="!fotosDisponibles" (click)="fotoFormulario('galeria')">
           <ion-icon slot="start" name="images-outline"></ion-icon>
           Galería
         </ion-button>
@@ -83,6 +83,7 @@
           Quitar
         </ion-button>
         <span class="foto-ayuda" *ngIf="!online">Las fotos se guardan en el servidor: necesitan conexión.</span>
+        <span class="foto-ayuda" *ngIf="online && ahorroBateria">Ahorro de batería (batería baja): las fotos se desactivan hasta conectar el cargador.</span>
       </div>
     </div>
 
@@ -191,11 +192,11 @@
         </div>
 
         <div class="visor-acciones">
-          <ion-button expand="block" shape="round" [disabled]="!online || subiendoFoto || (visor?.id ?? 0) < 0" (click)="cambiarFotoVisor()">
+          <ion-button expand="block" shape="round" [disabled]="!fotosDisponibles || subiendoFoto || (visor?.id ?? 0) < 0" (click)="cambiarFotoVisor()">
             <ion-icon slot="start" name="camera-outline"></ion-icon>
             {{ visor?.foto ? 'Cambiar foto' : 'Agregar foto' }}
           </ion-button>
-          <ion-button *ngIf="visor?.foto" expand="block" fill="clear" color="danger" [disabled]="!online || subiendoFoto" (click)="quitarFotoVisor()">
+          <ion-button *ngIf="visor?.foto" expand="block" fill="clear" color="danger" [disabled]="!fotosDisponibles || subiendoFoto" (click)="quitarFotoVisor()">
             Quitar foto
           </ion-button>
           <p class="foto-ayuda" *ngIf="!online">Sin conexión: las fotos se pueden cambiar cuando vuelva Internet.</p>

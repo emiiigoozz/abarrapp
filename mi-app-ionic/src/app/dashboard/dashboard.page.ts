@@ -7,6 +7,7 @@ import { ApiService } from '../shared/api.service';
 import { SyncService } from '../shared/sync.service';
 import { mensajeError } from '../shared/network.service';
 import { SensoresService } from '../shared/sensores.service';
+import { ContextoService } from '../shared/contexto.service';
 import { ToastController } from '@ionic/angular';
 import { AlertaPerdida, AlertaStock, GananciaDia, Resumen, TopProducto } from '../models';
 
@@ -43,6 +44,7 @@ export class DashboardPage implements OnInit, AfterViewInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private sensores: SensoresService,
     private toastCtrl: ToastController,
+    private contexto: ContextoService,
   ) { }
 
   ngOnInit() {
@@ -76,6 +78,7 @@ export class DashboardPage implements OnInit, AfterViewInit, OnDestroy {
   private dejarDeAgitar?: () => void;
 
   async ionViewDidEnter() {
+    if (this.contexto.decision().ahorroBateria) return;   // Regla R4
     this.dejarDeAgitar = await this.sensores.alAgitar(() => this.actualizarAlAgitar());
   }
 
@@ -85,7 +88,7 @@ export class DashboardPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private async actualizarAlAgitar() {
-    if (this.cargando) return;
+    if (this.cargando || this.contexto.decision().ahorroBateria) return;
     await this.cargarDashboard();
     const toast = await this.toastCtrl.create({
       message: this.errorMsg ? this.errorMsg : 'Datos actualizados (agitaste el teléfono)',

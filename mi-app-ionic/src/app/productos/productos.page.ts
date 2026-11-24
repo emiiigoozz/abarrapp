@@ -2,6 +2,7 @@ import { ChangeDetectorRef, Component, OnDestroy, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ActionSheetController, AlertController, ToastController } from '@ionic/angular';
 import { SensoresService } from '../shared/sensores.service';
+import { ContextoService } from '../shared/contexto.service';
 import { Subscription } from 'rxjs';
 import { HidScannerService } from '../shared/hid-scanner.service';
 import { StorageService } from '../shared/storage.service';
@@ -69,6 +70,7 @@ export class ProductosPage implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private sensores: SensoresService,
     private toastCtrl: ToastController,
+    private contexto: ContextoService,
     private hidScanner: HidScannerService,
   ) { }
 
@@ -110,6 +112,7 @@ export class ProductosPage implements OnInit, OnDestroy {
   private dejarDeAgitar?: () => void;
 
   async ionViewDidEnter() {
+    if (this.contexto.decision().ahorroBateria) return;   // Regla R4
     this.dejarDeAgitar = await this.sensores.alAgitar(() => this.actualizarAlAgitar());
   }
 
@@ -119,7 +122,7 @@ export class ProductosPage implements OnInit, OnDestroy {
   }
 
   private async actualizarAlAgitar() {
-    if (this.cargando) return;
+    if (this.cargando || this.contexto.decision().ahorroBateria) return;
     await this.cargarProductos();
     const toast = await this.toastCtrl.create({
       message: this.errorMsg ? this.errorMsg : 'Productos actualizados (agitaste el teléfono)',
@@ -142,6 +145,15 @@ export class ProductosPage implements OnInit, OnDestroy {
   /** Las fotos se guardan en el servidor, así que necesitan conexión. */
   get online(): boolean {
     return this.network.online;
+  }
+
+  /** Regla R4: en ahorro de batería no se usan la cámara ni la subida de fotos. */
+  get ahorroBateria(): boolean {
+    return this.contexto.decision().ahorroBateria;
+  }
+
+  get fotosDisponibles(): boolean {
+    return this.online && !this.ahorroBateria;
   }
 
   /** Lo que se ve en el formulario: la foto nueva, o la que ya tenía (si no se pidió quitarla). */

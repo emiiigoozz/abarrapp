@@ -27,6 +27,11 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 - **Recepción de mercancía:** entradas de stock y alta rápida de productos nuevos.
 - **Escáner de códigos de barras:** con la cámara (ZXing) o con un lector USB/Bluetooth tipo teclado.
 - **Geolocalización:** en el menú de la tienda, la app obtiene la ubicación GPS del teléfono (Capacitor Geolocation) y muestra latitud, longitud y precisión. El admin puede guardar esa ubicación como la de la tienda; desde entonces cualquier miembro ve **a qué distancia está de la tienda** y si está dentro de ella (radio de 100 m), y puede abrirla en Google Maps. Maneja permiso rechazado (con explicación antes de volver a pedirlo), GPS apagado y tiempo agotado.
+- **Reglas de contexto** (pantalla `/reglas`, detalle en [docs/REGLAS.md](docs/REGLAS.md)): la app cambia su comportamiento según dónde está el usuario, si hay Internet, la batería y su rol.
+  - **R1:** en la tienda y con conexión, vende directo al servidor.
+  - **R2:** en la tienda sin conexión, vende y guarda la venta en el teléfono.
+  - **R3:** fuera de la tienda, el trabajador no puede vender y el admin vende con aviso.
+  - **R4:** con la batería en 20 % o menos y sin cargador, apaga las fotos y "agitar para actualizar", y sincroniza cada 60 s.
 - **Sensores del teléfono** (pantalla `/sensores`): muestra en vivo el **acelerómetro** y el giroscopio (Capacitor Motion → evento `devicemotion`), la **orientación** con un nivel de burbuja para acomodar repisas (`deviceorientation`) y la **batería** con aviso de batería baja (Capacitor Device). Al **agitar el teléfono** en el Dashboard o en Productos se vuelven a pedir los datos al servidor y el teléfono vibra (Capacitor Haptics); se puede desactivar. Si el dispositivo no tiene un sensor, lo avisa.
 - **Fotos de productos:** se toman con la cámara o se eligen de la galería (Capacitor Camera), se guardan en el servidor y se ven como miniatura en Productos y en el punto de venta. Un visor permite ampliarlas (tocar para acercar), cambiarlas o quitarlas. En pantallas anchas la lista de productos se acomoda en 2 o 3 columnas.
 - **Dashboard:**
@@ -103,6 +108,7 @@ AbarrApp es una aplicación móvil hecha con **Ionic + Angular + Capacitor** que
 | `/productos` | CRUD de productos de la tienda | admin |
 | `/miembros` | Aceptar solicitudes y cambiar roles | admin |
 | `/usuarios` | CRUD de usuarios del sistema | admin |
+| `/reglas` | Variables de contexto, reglas activas y comportamiento resultante | Todos los roles |
 | `/sensores` | Acelerómetro, orientación (nivel), batería y "agitar para actualizar" | Todos los roles |
 
 Las páginas de inventario revisan al abrir que haya sesión y tienda activa; si falta alguna, mandan a `/login` o a `/tiendas`.
@@ -253,6 +259,7 @@ cd mi-app-ionic/android
 | Email | Contraseña | Tienda |
 |---|---|---|
 | demo@abarrapp.com | demo1234 | Abarrotes Demo (admin) |
+| trabajador@abarrapp.com | demo1234 | Abarrotes Demo (trabajador; para probar la regla R3) |
 
 Estas credenciales las crea `database.sql`.
 
@@ -265,6 +272,7 @@ App II/
 ├── README.md
 ├── BITACORA_IA.md                 ← bitácora de desarrollo asistido por IA
 ├── docs/API.md                    ← documentación de endpoints
+├── docs/REGLAS.md                 ← reglas de contexto y su diagrama
 ├── api-login/                     ← API REST en PHP (se copia a htdocs)
 │   ├── config.php                 ← conexión PDO + requerirTiendaId()
 │   ├── login.php, register.php
@@ -288,13 +296,16 @@ App II/
         │   ├── foto.service.ts    ← cámara y galería (Capacitor Camera)
         │   ├── geo.service.ts     ← GPS, permisos y distancia (Capacitor Geolocation)
         │   ├── sensores.service.ts← acelerómetro, orientación, batería, sacudida y vibración
+        │   ├── reglas.ts          ← motor de reglas de contexto (funciones puras + reglas.spec.ts)
+        │   ├── contexto.service.ts← variables de contexto (ubicación, red, batería, rol)
         │   ├── network.service.ts ← detección de red + mensajeError()
         │   ├── hid-scanner.service.ts
         │   └── barcode-scanner/   ← escáner con cámara
         ├── login/  register/  tiendas/  home/
         ├── productos/  movimientos/  dashboard/
         ├── miembros/  usuarios/
-        └── sensores/              ← pantalla de sensores del teléfono
+        ├── sensores/              ← pantalla de sensores del teléfono
+        └── reglas/                ← pantalla de reglas de contexto
 ```
 
 ## Limitaciones conocidas
